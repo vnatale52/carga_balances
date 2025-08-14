@@ -1,11 +1,11 @@
-// frontend/scripts.js
+// frontend/scripts.js (CÓDIGO CORRECTO FINAL)
 
 document.addEventListener('DOMContentLoaded', async () => {
     const select = document.getElementById('entidadSelect');
     const statusDiv = document.getElementById('status');
 
     try {
-        // --- CORRECCIÓN 1: Se usa una ruta relativa y se apunta al endpoint correcto /api/entidades ---
+        // ✅ ESTA ES LA LÍNEA CRÍTICA: USA UNA RUTA RELATIVA
         const response = await fetch("/api/entidades");
       
         if (!response.ok) throw new Error('No se pudieron cargar las entidades.');
@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const entidades = await response.json();
         select.innerHTML = ''; 
 
-        // Añadir la opción "Todas las Entidades"
         const allOption = document.createElement('option');
         allOption.value = "0"; 
         allOption.textContent = "00000 - Todas las Entidades (ignora otras selecciones)";
@@ -27,11 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             select.appendChild(option);
         });
 
-        // Evento para gestionar la selección de "Todas las entidades"
         select.addEventListener('change', () => {
             const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
             if (selectedOptions.includes("0") && selectedOptions.length > 1) {
-                // Si "Todas" está seleccionada, deseleccionar las demás
                 Array.from(select.options).forEach(opt => {
                     opt.selected = (opt.value === "0");
                 });
@@ -74,7 +71,7 @@ document.getElementById('reportForm').addEventListener('submit', async function 
     statusDiv.style.color = 'orange';
  
     try {
-        // --- CORRECCIÓN 2: Se usa una ruta relativa en lugar de http://localhost:3000 ---
+        // ✅ ESTA ES LA SEGUNDA LÍNEA CRÍTICA: TAMBIÉN USA UNA RUTA RELATIVA
         const response = await fetch('/generate-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
