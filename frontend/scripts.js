@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusDiv = document.getElementById('status');
 
     try {
-        // ✅ ESTA ES LA LÍNEA CRÍTICA: USA UNA RUTA RELATIVA
-        const response = await fetch("/api/entidades");
+        
+        const response = await fetch("/api/entidades");  // ✅ ESTA ES LA LÍNEA CRÍTICA: USA UNA RUTA RELATIVA
       
         if (!response.ok) throw new Error('No se pudieron cargar las entidades.');
         
@@ -112,4 +112,5 @@ document.getElementById('reportForm').addEventListener('submit', async function 
         statusDiv.style.color = 'red';
         console.error('Detalle del error:', error);
     }
+
 });
