@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusDiv = document.getElementById('status');
 
     try {
-        const response = await fetch("https://carga-balances.onrender.com/api/data");   //   ✅ para Render
+        const response = await fetch("https://carga-balances.onrender.com/data");   //   ✅ para Render quitado "api" "https://carga-balances.onrender.com/api/data"
       
         if (!response.ok) throw new Error('No se pudieron cargar las entidades.');
         
@@ -118,3 +118,4 @@ document.getElementById('reportForm').addEventListener('submit', async function 
     }
 
 });
+
