@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga y Filtro de Datos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Generador de Reportes de Balance</h1>
+        <p>
+            Asegúrate de haber colocado los archivos 
+            <code>balhist.txt</code>, <code>cuentas.txt</code>, <code>nomina.txt</code> e <code>indices.xlsx</code>, 
+            en la carpeta <code>frontend/data</code> de la aplicación.
+        </p>
+        <p>Luego, define los filtros para generar el reporte.</p>
+
+        <form id="reportForm">
+
+            <fieldset>
+                <legend>Filtros de Datos</legend>
+                <div class="filter-section">
+                    <h3>Filtros para el Reporte</h3>
+                    <div class="form-group">
+                        <label for="entidadSelect">Número de Entidad:</label>
+                        <!-- ATENCIÓN: Se ha añadido el atributo "multiple" -->
+                        <select id="entidadSelect" name="entidad" required multiple style="height: 150px;">
+                            <option value="" disabled>Cargando entidades...</option>
+                        </select>
+                        <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                            Mantén presionado <strong>Ctrl</strong> (o <strong>Cmd</strong> en Mac) para seleccionar varias entidades.
+                        </p>
+                    </div>
+                    <div class="form-group">
+                        <label for="balhistDesdeInput">Fecha Desde:</label>
+                        <input type="month" id="balhistDesdeInput" name="balhistDesde" value="2021-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="balhistHastaInput">Fecha Hasta:</label>
+                        <input type="month" id="balhistHastaInput" name="balhistHasta" value="2025-12" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit">Generar Reporte Excel</button>
+        </form>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="scripts.js" type="module"></script>
+</body>
+</html>
