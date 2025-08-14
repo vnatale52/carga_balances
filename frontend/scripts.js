@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusDiv = document.getElementById('status');
 
     try {
-        const response = await fetch("https://carga-balances.onrender.com/data");   //   ✅ para Render quitado "api" "https://carga-balances.onrender.com/api/data"
+        // --- CORRECCIÓN 1: Se usa una ruta relativa y se apunta al endpoint correcto /api/entidades ---
+        const response = await fetch("/api/entidades");
       
         if (!response.ok) throw new Error('No se pudieron cargar las entidades.');
         
@@ -49,8 +50,7 @@ document.getElementById('reportForm').addEventListener('submit', async function 
 
     const statusDiv = document.getElementById('status');
     const select = document.getElementById('entidadSelect');
-
-    // --- MODIFICADO: Obtener todas las opciones seleccionadas ---
+    
     const selectedEntidades = Array.from(select.selectedOptions).map(option => option.value);
 
     if (selectedEntidades.length === 0) {
@@ -62,7 +62,6 @@ document.getElementById('reportForm').addEventListener('submit', async function 
     const balhistDesde = document.getElementById('balhistDesdeInput').value;
     const balhistHasta = document.getElementById('balhistHastaInput').value;
     
-    // El backend ahora recibirá un array de entidades
     const filtros = {
         entidad: selectedEntidades, 
         balhistDesde,
@@ -75,7 +74,8 @@ document.getElementById('reportForm').addEventListener('submit', async function 
     statusDiv.style.color = 'orange';
  
     try {
-        const response = await fetch('http://localhost:3000/generate-report', {
+        // --- CORRECCIÓN 2: Se usa una ruta relativa en lugar de http://localhost:3000 ---
+        const response = await fetch('/generate-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(filtros),
@@ -89,7 +89,6 @@ document.getElementById('reportForm').addEventListener('submit', async function 
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             
-            // --- Nombre de archivo dinámico mejorado ---
             let nombreEntidad;
             if (selectedEntidades.includes('0') || selectedEntidades.length > 5) {
                 nombreEntidad = "Multiples_Entidades";
@@ -116,6 +115,4 @@ document.getElementById('reportForm').addEventListener('submit', async function 
         statusDiv.style.color = 'red';
         console.error('Detalle del error:', error);
     }
-
 });
-
