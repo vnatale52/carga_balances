@@ -1,4 +1,4 @@
-// backend/server.js (Versión con Regla de Ajuste Final)
+// backend/server.js (Versión con Regla de Ajuste Final y optimización de memoria)
 
 import express from 'express';
 import cors from 'cors';
@@ -6,12 +6,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import xlsx from 'xlsx';
+import readline from 'readline'; // <--- CAMBIO 1: Importamos el módulo 'readline' para leer archivos línea por línea.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-// const port = 3000;     // para localhost
 const PORT = process.env.PORT || 3000;
 
 
@@ -20,26 +20,40 @@ app.use(cors());
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// --- FUNCIONES DE PROCESAMIENTO (Sin cambios) ---
+// --- FUNCIONES DE PROCESAMIENTO ---
 
-function procesarBalhist(filePath, filtros) {
+// <--- CAMBIO 2: La función 'procesarBalhist' se reescribe por completo para ser asíncrona y usar streams.
+// Esto evita cargar el archivo completo en memoria, solucionando el error 'heap out of memory'.
+async function procesarBalhist(filePath, filtros) {
     const isAllEntities = filtros.entidad.includes("0");
     const selectedEntitiesSet = isAllEntities ? null : new Set(filtros.entidad.map(Number));
     const fechaDesde = filtros.balhistDesde;
     const fechaHasta = filtros.balhistHasta;
     if (fechaDesde > fechaHasta) return [];
-    const fileContent = fs.readFileSync(filePath, 'latin1');
-    const lineas = fileContent.split('\n').filter(line => line.trim() !== '');
+
     const resultados = [];
-    for (const linea of lineas) {
+    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
+
+    const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity
+    });
+
+    // Procesamos el archivo línea por línea usando un stream, con un consumo de memoria mínimo.
+    for await (const linea of rl) {
+        if (linea.trim() === '') continue;
+
         const [numEntidadStr, fechaBceStr, numCuentaStr, saldoStr] = linea.split('\t');
         if (!numEntidadStr || !fechaBceStr || !numCuentaStr || saldoStr === undefined) continue;
+
         const entidadActual = parseInt(numEntidadStr.replace(/"/g, ''), 10);
         const anio = fechaBceStr.replace(/"/g, '').substring(0, 4);
         const mes = fechaBceStr.replace(/"/g, '').substring(4, 6);
         const fechaComparable = `${anio}-${mes}`;
+
         const matchesDateRange = (fechaComparable >= fechaDesde && fechaComparable <= fechaHasta);
         const matchesEntity = isAllEntities || selectedEntitiesSet.has(entidadActual);
+
         if (matchesDateRange && matchesEntity) {
             resultados.push({
                 num_entidad: entidadActual,
@@ -168,9 +182,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         const cuentaData = pivotedData[num_cuenta_str];
         const num_cuenta = parseInt(num_cuenta_str);
 
-        // --- LÓGICA DE AJUSTE CORREGIDA: SOLO SE AJUSTAN CUENTAS EN ESTE RANGO ---
         const isAdjustable = (num_cuenta > 500000 && num_cuenta < 700000);
-        // --- FIN LÓGICA DE AJUSTE ---
 
         const rowObject = {
             'Entidad': infoEntidad.num_entidad,
@@ -188,7 +200,6 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
             const coefAXI = axiCoefficients[i];
             
             let axiMensualMes = 0;
-            // Solo calcular AXI si la cuenta CUMPLE la condición.
             if (isAdjustable) {
                 axiMensualMes = saldoMonedaConstanteAnterior * coefAXI;
             }
@@ -227,7 +238,8 @@ app.get('/api/entidades', (req, res) => {
     }
 });
 
-app.post('/generate-report', (req, res) => {
+// <--- CAMBIO 3: Se añade 'async' al callback del endpoint para poder usar 'await' dentro de él.
+app.post('/generate-report', async (req, res) => {
     try {
         const filtros = req.body;
         const filePaths = {
@@ -241,7 +253,10 @@ app.post('/generate-report', (req, res) => {
                 return res.status(404).send(`Error: El archivo ${path.basename(filePaths[key])} no se encuentra.`);
             }
         }
-        const datosBalhistFiltrados = procesarBalhist(filePaths.balhist, filtros);
+        
+        // <--- CAMBIO 4: Se añade 'await' porque procesarBalhist ahora es una función asíncrona.
+        const datosBalhistFiltrados = await procesarBalhist(filePaths.balhist, filtros);
+        
         if (datosBalhistFiltrados.length === 0) {
             return res.status(404).send('No se encontraron registros de balance con los filtros seleccionados.');
         }
@@ -323,12 +338,6 @@ app.post('/generate-report', (req, res) => {
     }
 });
 
-// --- INICIO DEL SERVIDOR --- para localhost
-//  app.listen(port, () => {
-//     console.log(`Servidor (ESM) escuchando en http://localhost:${port}`);
-//  });
-
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
