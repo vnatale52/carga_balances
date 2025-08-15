@@ -1,4 +1,4 @@
-// backend/server.js (Versión con Regla de Ajuste Final y optimización de memoria)
+// backend/server.js (Versión con optimización de memoria en todas las lecturas de archivos)
 
 import express from 'express';
 import cors from 'cors';
@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import xlsx from 'xlsx';
-import readline from 'readline'; // <--- CAMBIO 1: Importamos el módulo 'readline' para leer archivos línea por línea.
+import readline from 'readline';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,43 +14,30 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
-// --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// --- FUNCIONES DE PROCESAMIENTO ---
+// --- FUNCIONES DE PROCESAMIENTO OPTIMIZADAS ---
 
-// <--- CAMBIO 2: La función 'procesarBalhist' se reescribe por completo para ser asíncrona y usar streams.
-// Esto evita cargar el archivo completo en memoria, solucionando el error 'heap out of memory'.
 async function procesarBalhist(filePath, filtros) {
     const isAllEntities = filtros.entidad.includes("0");
     const selectedEntitiesSet = isAllEntities ? null : new Set(filtros.entidad.map(Number));
     const fechaDesde = filtros.balhistDesde;
     const fechaHasta = filtros.balhistHasta;
     if (fechaDesde > fechaHasta) return [];
-
     const resultados = [];
     const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
+    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
-    const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity
-    });
-
-    // Procesamos el archivo línea por línea usando un stream, con un consumo de memoria mínimo.
     for await (const linea of rl) {
         if (linea.trim() === '') continue;
-
         const [numEntidadStr, fechaBceStr, numCuentaStr, saldoStr] = linea.split('\t');
         if (!numEntidadStr || !fechaBceStr || !numCuentaStr || saldoStr === undefined) continue;
-
         const entidadActual = parseInt(numEntidadStr.replace(/"/g, ''), 10);
         const anio = fechaBceStr.replace(/"/g, '').substring(0, 4);
         const mes = fechaBceStr.replace(/"/g, '').substring(4, 6);
         const fechaComparable = `${anio}-${mes}`;
-
         const matchesDateRange = (fechaComparable >= fechaDesde && fechaComparable <= fechaHasta);
         const matchesEntity = isAllEntities || selectedEntitiesSet.has(entidadActual);
 
@@ -66,34 +53,44 @@ async function procesarBalhist(filePath, filtros) {
     return resultados;
 }
 
-function procesarCuentas(filePath) {
-    const fileContent = fs.readFileSync(filePath, 'latin1');
-    return fileContent.split('\n').filter(line => line.trim() !== '').map(linea => {
+async function procesarCuentas(filePath) {
+    const cuentas = [];
+    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
+    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+
+    for await (const linea of rl) {
+        if (linea.trim() === '') continue;
         const [numCuenta, descripcion] = linea.split('\t');
-        if (!numCuenta || !descripcion) return null;
-        return {
+        if (!numCuenta || !descripcion) continue;
+        cuentas.push({
             num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10),
             descripcion_cuenta: descripcion.replace(/"/g, '').trim(),
-        };
-    }).filter(Boolean);
+        });
+    }
+    return cuentas;
 }
 
-function procesarNomina(filePath) {
-    const fileContent = fs.readFileSync(filePath, 'latin1');
-    return fileContent.split('\n').filter(line => line.trim() !== '').map(linea => {
+async function procesarNomina(filePath) {
+    const nomina = [];
+    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
+    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+
+    for await (const linea of rl) {
+        if (linea.trim() === '') continue;
         const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t');
-        if (!numEntidad || !nombreEntidad) return null;
-        return {
+        if (!numEntidad || !nombreEntidad) continue;
+        nomina.push({
             num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10),
             nombre_entidad: nombreEntidad.replace(/"/g, '').trim(),
             nombre_corto: (nombreCorto || '').replace(/"/g, '').trim()
-        };
-    }).filter(Boolean);
+        });
+    }
+    return nomina;
 }
 
 function procesarIndices(filePath) {
     try {
-        const buffer = fs.readFileSync(filePath);
+        const buffer = fs.readFileSync(filePath); // OK mantener esto, los .xlsx se leen como buffer y suelen ser pequeños
         const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
@@ -132,13 +129,11 @@ function getMonthsInRange(start, end) {
     return months;
 }
 
-// --- FUNCIÓN CENTRAL CON LA LÓGICA DE AJUSTE CORREGIDA ---
 function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMonths, indicesMap) {
+    // ... (esta función no necesita cambios)
     if (!balancesDeEstaEntidad || balancesDeEstaEntidad.length === 0) return [];
-
     const num_entidad = balancesDeEstaEntidad[0].num_entidad;
     const infoEntidad = nominaMap.get(num_entidad) || { nombre_entidad: 'Desconocido', num_entidad };
-
     const pivotedData = {};
     for (const balance of balancesDeEstaEntidad) {
         if (!pivotedData[balance.num_cuenta]) {
@@ -147,7 +142,6 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         }
         pivotedData[balance.num_cuenta].saldos[balance.fecha_bce] = balance.saldo;
     }
-
     const newHeaders = ['Entidad', 'Nombre Entidad', 'Cuenta', 'Descripción Cuenta'];
     allMonths.forEach(month => {
         newHeaders.push(`${month} Saldo en moneda constante`);
@@ -156,10 +150,8 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         newHeaders.push(`${month} AXI mensual solo del mes`);
         newHeaders.push(`${month} AXI acumulado al mes`);
     });
-
     const firstRowContent = new Array(newHeaders.length).fill('');
     firstRowContent[0] = '<< Volver a la Tabla de Contenidos';
-
     const axiCoefficients = allMonths.map((month, i) => {
         if (month.startsWith('01-')) return 0;
         if (i === 0) return 0;
@@ -173,72 +165,59 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         const colIndex = 4 + (i * 5) + 3;
         axiRow[colIndex] = axiCoefficients[i];
     });
-
     const dataForSheet = [firstRowContent, axiRow, newHeaders];
-    
     const sortedCuentas = Object.keys(pivotedData).sort((a, b) => parseInt(a) - parseInt(b));
-    
     for (const num_cuenta_str of sortedCuentas) {
         const cuentaData = pivotedData[num_cuenta_str];
         const num_cuenta = parseInt(num_cuenta_str);
-
         const isAdjustable = (num_cuenta > 500000 && num_cuenta < 700000);
-
         const rowObject = {
             'Entidad': infoEntidad.num_entidad,
             'Nombre Entidad': infoEntidad.nombre_entidad,
             'Cuenta': num_cuenta,
             'Descripción Cuenta': cuentaData.desc,
         };
-
         let saldoHistAcumuladoAnterior = 0;
         let axiAcumuladoAnterior = 0;
         let saldoMonedaConstanteAnterior = 0;
-        
         allMonths.forEach((month, i) => {
             const saldoEnMonedaConstanteMes = cuentaData.saldos[month] || 0;
             const coefAXI = axiCoefficients[i];
-            
             let axiMensualMes = 0;
             if (isAdjustable) {
                 axiMensualMes = saldoMonedaConstanteAnterior * coefAXI;
             }
-            
             const axiAcumuladoMes = axiAcumuladoAnterior + axiMensualMes;
             const saldoHistAcumuladoMes = saldoEnMonedaConstanteMes - axiAcumuladoMes;
             const saldoHistoricoMes = saldoHistAcumuladoMes - saldoHistAcumuladoAnterior;
-            
             rowObject[`${month} Saldo en moneda constante`] = saldoEnMonedaConstanteMes;
             rowObject[`${month} Saldo Histórico solo del mes`] = saldoHistoricoMes;
             rowObject[`${month} Saldo Histórico acumulado al mes`] = saldoHistAcumuladoMes;
             rowObject[`${month} AXI mensual solo del mes`] = axiMensualMes;
             rowObject[`${month} AXI acumulado al mes`] = axiAcumuladoMes;
-
             saldoHistAcumuladoAnterior = saldoHistAcumuladoMes;
             axiAcumuladoAnterior = axiAcumuladoMes;
             saldoMonedaConstanteAnterior = saldoEnMonedaConstanteMes;
         });
-        
         const rowAsArray = newHeaders.map(header => rowObject[header] !== undefined ? rowObject[header] : '');
         dataForSheet.push(rowAsArray);
     }
-    
     return dataForSheet;
 }
 
-
 // --- ENDPOINTS ---
-app.get('/api/entidades', (req, res) => {
+app.get('/api/entidades', async (req, res) => { // <-- Hacemos este endpoint async también
     try {
         const nominaPath = path.join(__dirname, '../frontend/data/nomina.txt');
         if (!fs.existsSync(nominaPath)) return res.status(404).json({ message: 'Archivo nomina.txt no encontrado.' });
-        res.json(procesarNomina(nominaPath));
+        // Usamos la nueva función async
+        const nominaData = await procesarNomina(nominaPath);
+        res.json(nominaData);
     } catch (error) {
         res.status(500).json({ message: 'Error interno al leer entidades.' });
     }
 });
 
-// <--- CAMBIO 3: Se añade 'async' al callback del endpoint para poder usar 'await' dentro de él.
 app.post('/generate-report', async (req, res) => {
     try {
         const filtros = req.body;
@@ -254,9 +233,8 @@ app.post('/generate-report', async (req, res) => {
             }
         }
         
-        // <--- CAMBIO 4: Se añade 'await' porque procesarBalhist ahora es una función asíncrona.
+        // Se llaman a todas las funciones de lectura de archivos con await
         const datosBalhistFiltrados = await procesarBalhist(filePaths.balhist, filtros);
-        
         if (datosBalhistFiltrados.length === 0) {
             return res.status(404).send('No se encontraron registros de balance con los filtros seleccionados.');
         }
@@ -266,8 +244,11 @@ app.post('/generate-report', async (req, res) => {
             return res.status(404).send('No se pudieron leer los datos del archivo indices.xlsx.');
         }
 
-        const cuentasMap = new Map(procesarCuentas(filePaths.cuentas).map(c => [c.num_cuenta, c]));
-        const nominaMap = new Map(procesarNomina(filePaths.nomina).map(e => [e.num_entidad, e]));
+        const cuentasData = await procesarCuentas(filePaths.cuentas);
+        const nominaData = await procesarNomina(filePaths.nomina);
+        const cuentasMap = new Map(cuentasData.map(c => [c.num_cuenta, c]));
+        const nominaMap = new Map(nominaData.map(e => [e.num_entidad, e]));
+
         const workbook = xlsx.utils.book_new();
         const TOC_SHEET_NAME = 'Table of Contents';
         const allMonths = getMonthsInRange(filtros.balhistDesde, filtros.balhistHasta); 
@@ -301,11 +282,7 @@ app.post('/generate-report', async (req, res) => {
                 
                 const colWidths = [ { wch: 15 }, { wch: 30 }, { wch: 10 }, { wch: 45 } ];
                 allMonths.forEach(() => {
-                    colWidths.push({ wch: 25 });
-                    colWidths.push({ wch: 25 });
-                    colWidths.push({ wch: 25 });
-                    colWidths.push({ wch: 25 });
-                    colWidths.push({ wch: 25 });
+                    colWidths.push({ wch: 25 }); colWidths.push({ wch: 25 }); colWidths.push({ wch: 25 }); colWidths.push({ wch: 25 }); colWidths.push({ wch: 25 });
                 });
                 worksheet['!cols'] = colWidths;
                 sheetsToAppend.push({ name: sheetName, sheet: worksheet });
