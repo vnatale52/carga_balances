@@ -1,4 +1,4 @@
-// backend/server.js (Versión Final con Mejoras de Formato y Presentación)
+// backend/server.js (Versión Final, Limpia y Unificada)
 
 import express from 'express';
 import cors from 'cors';
@@ -18,17 +18,74 @@ app.use(cors());
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// --- FUNCIONES DE PROCESAMIENTO (Sin cambios) ---
-async function procesarCuentas(filePath) { /* ...código sin cambios... */ }
-async function procesarNomina(filePath) { /* ...código sin cambios... */ }
-function procesarIndices(filePath) { /* ...código sin cambios... */ }
-function getMonthsInRange(start, end) { /* ...código sin cambios... */ }
+// --- FUNCIONES DE PROCESAMIENTO ---
 
-// --- FUNCIÓN CENTRAL CON FILAS SEPARADORAS ---
+async function procesarCuentas(filePath) {
+    const cuentas = [];
+    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
+    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+    for await (const linea of rl) {
+        if (linea.trim() === '') continue;
+        const [numCuenta, descripcion] = linea.split('\t');
+        if (!numCuenta || !descripcion) continue;
+        cuentas.push({ num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10), descripcion_cuenta: descripcion.replace(/"/g, '').trim() });
+    }
+    return new Map(cuentas.map(c => [c.num_cuenta, c]));
+}
+
+async function procesarNomina(filePath) {
+    const nomina = [];
+    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
+    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+    for await (const linea of rl) {
+        if (linea.trim() === '') continue;
+        const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t');
+        if (!numEntidad || !nombreEntidad) continue;
+        nomina.push({ num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10), nombre_entidad: nombreEntidad.replace(/"/g, '').trim(), nombre_corto: (nombreCorto || '').replace(/"/g, '').trim() });
+    }
+    return new Map(nomina.map(e => [e.num_entidad, e]));
+}
+
+function procesarIndices(filePath) {
+    try {
+        const buffer = fs.readFileSync(filePath);
+        const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+        const indicesMap = new Map();
+        for (const row of jsonData) {
+            if (!row || row.length < 2) continue;
+            const fechaValue = row[0];
+            const indiceValue = row[1];
+            if (!indiceValue || !(fechaValue instanceof Date) || isNaN(fechaValue)) continue;
+            const anio = fechaValue.getFullYear();
+            const mes = ('0' + (fechaValue.getMonth() + 1)).slice(-2);
+            const fechaFormatoIndice = `${mes}-${anio}`;
+            const indiceStr = String(indiceValue).replace(',', '.');
+            indicesMap.set(fechaFormatoIndice, parseFloat(indiceStr));
+        }
+        return indicesMap;
+    } catch (error) { console.error("Error al procesar indices.xlsx:", error); return new Map(); }
+}
+
+function getMonthsInRange(start, end) {
+    const startDate = new Date(`${start}-01T00:00:00Z`);
+    const endDate = new Date(`${end}-01T00:00:00Z`);
+    let currentDate = startDate;
+    const months = [];
+    while (currentDate <= endDate) {
+        const month = ('0' + (currentDate.getUTCMonth() + 1)).slice(-2);
+        const year = currentDate.getUTCFullYear();
+        months.push(`${month}-${year}`);
+        currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
+    }
+    return months;
+}
+
 function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMonths, indicesMap, num_entidad) {
     if (!balancesDeEstaEntidad || balancesDeEstaEntidad.length === 0) return [];
     
-    // ... (Definiciones iniciales sin cambios: infoEntidad, pivotedData, newHeaders, numericHeaders) ...
     const infoEntidad = nominaMap.get(num_entidad) || { nombre_entidad: 'Desconocido', num_entidad };
     const pivotedData = {};
     for (const balance of balancesDeEstaEntidad) {
@@ -97,7 +154,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
                 subtotalRow[3] = `Subtotal Cuentas ${currentGroup}...`;
                 numericHeaders.forEach(h => subtotalRow[newHeaders.indexOf(h)] = subtotalAccumulator[h]);
                 dataForSheet.push(subtotalRow);
-                dataForSheet.push(new Array(newHeaders.length).fill(null)); // *** AÑADIR FILA EN BLANCO ***
+                dataForSheet.push(new Array(newHeaders.length).fill(null)); 
                 subtotalAccumulator = Object.fromEntries(numericHeaders.map(h => [h, 0]));
                 currentGroup = group;
             }
@@ -134,28 +191,39 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
 }
 
 // --- ENDPOINTS ---
-app.get('/api/entidades', async (req, res) => { /* ...código sin cambios... */ });
+app.get('/api/entidades', async (req, res) => {
+    try {
+        const nominaPath = path.join(__dirname, '../frontend/data/nomina.txt');
+        if (!fs.existsSync(nominaPath)) return res.status(404).json({ message: 'Archivo nomina.txt no encontrado.' });
+        const nominaMap = await procesarNomina(nominaPath);
+        res.json(Array.from(nominaMap.values()));
+    } catch (error) { res.status(500).json({ message: 'Error interno al leer entidades.' }); }
+});
 
 app.post('/generate-report', async (req, res) => {
     try {
         console.log("Report generation started...");
         const filtros = req.body;
         const filePaths = { balhist: path.join(__dirname, '../frontend/data/balhist.txt'), cuentas: path.join(__dirname, '../frontend/data/cuentas.txt'), nomina: path.join(__dirname, '../frontend/data/nomina.txt'), indices: path.join(__dirname, '../frontend/data/indices.xlsx') };
-        // ... (Carga de datos de consulta sin cambios) ...
         for (const key in filePaths) { if (!fs.existsSync(filePaths[key])) return res.status(404).send(`Error: El archivo ${path.basename(filePaths[key])} no se encuentra.`); }
+
         console.log("Loading lookup data (cuentas, nomina, indices)...");
         const [cuentasMap, nominaMap, indicesMap] = await Promise.all([ procesarCuentas(filePaths.cuentas), procesarNomina(filePaths.nomina), Promise.resolve(procesarIndices(filePaths.indices)) ]);
         console.log("Lookup data loaded.");
+
         const workbook = xlsx.utils.book_new();
         const TOC_SHEET_NAME = 'Table of Contents';
         const allMonths = getMonthsInRange(filtros.balhistDesde, filtros.balhistHasta);
         const tocSheetData = [['Hoja', 'Número de Entidad', 'Nombre de Entidad']];
+        
         const balancesPorEntidad = new Map();
         const isAllEntities = filtros.entidad.includes("0");
         const selectedEntitiesSet = isAllEntities ? null : new Set(filtros.entidad.map(Number));
+
         console.log("Starting to stream and process balhist.txt...");
         const fileStream = fs.createReadStream(filePaths.balhist, { encoding: 'latin1' });
         const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+
         for await (const linea of rl) {
             const [numEntidadStr, fechaBceStr, numCuentaStr, saldoStr] = linea.split('\t');
             if (!numEntidadStr || !fechaBceStr || !numCuentaStr || saldoStr === undefined) continue;
@@ -170,28 +238,28 @@ app.post('/generate-report', async (req, res) => {
             }
         }
         console.log(`Finished processing balhist.txt. Found data for ${balancesPorEntidad.size} entities.`);
+
         if (balancesPorEntidad.size === 0) return res.status(404).send('No se encontraron registros de balance con los filtros seleccionados.');
-        
+
         const sortedEntityNumbers = Array.from(balancesPorEntidad.keys()).sort((a, b) => a - b);
         for (const num_entidad of sortedEntityNumbers) {
             console.log(`Generating sheet for entity ${num_entidad}...`);
             const entityBalances = balancesPorEntidad.get(num_entidad);
             const dataForSheet = prepareDataForSheet(entityBalances, cuentasMap, nominaMap, allMonths, indicesMap, num_entidad);
-            if (dataForSheet.length <= 3) { console.log(`Skipping sheet for entity ${num_entidad} due to no data.`); continue; }
             
+            if (dataForSheet.length <= 3) { console.log(`Skipping sheet for entity ${num_entidad} due to no data.`); continue; }
+
             const infoEntidad = nominaMap.get(num_entidad) || {};
             let sheetName = `${String(num_entidad).padStart(5, '0')} - ${infoEntidad.nombre_corto || infoEntidad.nombre_entidad || ''}`.trim().substring(0, 31).replace(/[\\/*?[\]]/g, '');
             tocSheetData.push([sheetName, num_entidad, infoEntidad.nombre_entidad || '']);
             const worksheet = xlsx.utils.aoa_to_sheet(dataForSheet);
 
-            // --- DEFINICIÓN DE ESTILOS MEJORADA ---
             const numberFormat2Decimals = '#,##0.00';
-            const percentFormat4Decimals = '0.0000%'; // *** FORMATO PORCENTAJE 4 DECIMALES ***
+            const percentFormat4Decimals = '0.0000%';
             const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
-            const totalStyle = { font: { bold: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "FFFF00" } } }; // *** Resaltado Amarillo ***
-            const subtotalStyle = { font: { bold: true, italic: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "D3D3D3" } } }; // *** Resaltado Gris Claro ***
+            const totalStyle = { font: { bold: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "FFFF00" } } };
+            const subtotalStyle = { font: { bold: true, italic: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "D3D3D3" } } };
             const disclaimerStyle = { font: { italic: true, sz: 9 }, alignment: { wrapText: true, vertical: "center" } };
-
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
                 for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -203,25 +271,23 @@ app.post('/generate-report', async (req, res) => {
                         const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
                         if (descCellValue.startsWith("Total")) { cell.s = totalStyle; }
                         else if (descCellValue.startsWith("Subtotal")) { cell.s = subtotalStyle; }
-                        else if (R === 1) { cell.z = percentFormat4Decimals; } // *** APLICAR FORMATO PORCENTAJE AXI ***
+                        else if (R === 1) { cell.z = percentFormat4Decimals; }
                         else { cell.z = numberFormat2Decimals; }
                     }
                 }
             }
             if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a ${TOC_SHEET_NAME}` };
             if (worksheet['B1']) worksheet['B1'].s = disclaimerStyle;
-            
             const colWidths = [ { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 45 } ];
             allMonths.forEach(() => { colWidths.push({ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }); });
             worksheet['!cols'] = colWidths;
             worksheet['!merges'] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } }];
-            worksheet['!rows'] = [{ hpt: 35 }, null, { hpt: 30 }]; // *** ALTURA DE FILAS REDUCIDA ***
-
+            worksheet['!rows'] = [{ hpt: 35 }, null, { hpt: 30 }];
+            
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
         
         console.log("All sheets generated. Finalizing workbook...");
-        // ... (Finalización del libro y envío de respuesta sin cambios) ...
         const tocWorksheet = xlsx.utils.aoa_to_sheet(tocSheetData);
         tocWorksheet['!cols'] = [{ wch: 35 }, { wch: 15 }, { wch: 50 }];
         tocSheetData.slice(1).forEach((row, index) => {
@@ -232,6 +298,7 @@ app.post('/generate-report', async (req, res) => {
         xlsx.utils.book_append_sheet(workbook, tocWorksheet, TOC_SHEET_NAME);
         workbook.SheetNames.splice(workbook.SheetNames.indexOf(TOC_SHEET_NAME), 1);
         workbook.SheetNames.unshift(TOC_SHEET_NAME);
+
         const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'buffer' });
         const nombreArchivo = `Reporte_Ajustado_Final_${filtros.balhistDesde}_a_${filtros.balhistHasta}.xlsx`;
         res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
@@ -248,9 +315,3 @@ app.post('/generate-report', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
-// Re-incluyo las funciones que se habían omitido por brevedad
-async function procesarCuentas(filePath) { const cuentas = []; const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' }); const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity }); for await (const linea of rl) { if (linea.trim() === '') continue; const [numCuenta, descripcion] = linea.split('\t'); if (!numCuenta || !descripcion) continue; cuentas.push({ num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10), descripcion_cuenta: descripcion.replace(/"/g, '').trim() }); } return new Map(cuentas.map(c => [c.num_cuenta, c])); }
-async function procesarNomina(filePath) { const nomina = []; const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' }); const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity }); for await (const linea of rl) { if (linea.trim() === '') continue; const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t'); if (!numEntidad || !nombreEntidad) continue; nomina.push({ num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10), nombre_entidad: nombreEntidad.replace(/"/g, '').trim(), nombre_corto: (nombreCorto || '').replace(/"/g, '').trim() }); } return new Map(nomina.map(e => [e.num_entidad, e])); }
-function procesarIndices(filePath) { try { const buffer = fs.readFileSync(filePath); const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true }); const sheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }); const indicesMap = new Map(); for (const row of jsonData) { if (!row || row.length < 2) continue; const fechaValue = row[0]; const indiceValue = row[1]; if (!indiceValue || !(fechaValue instanceof Date) || isNaN(fechaValue)) continue; const anio = fechaValue.getFullYear(); const mes = ('0' + (fechaValue.getMonth() + 1)).slice(-2); const fechaFormatoIndice = `${mes}-${anio}`; const indiceStr = String(indiceValue).replace(',', '.'); indicesMap.set(fechaFormatoIndice, parseFloat(indiceStr)); } return indicesMap; } catch (error) { console.error("Error al procesar indices.xlsx:", error); return new Map(); } }
-function getMonthsInRange(start, end) { const startDate = new Date(`${start}-01T00:00:00Z`); const endDate = new Date(`${end}-01T00:00:00Z`); let currentDate = startDate; const months = []; while (currentDate <= endDate) { const month = ('0' + (currentDate.getUTCMonth() + 1)).slice(-2); const year = currentDate.getUTCFullYear(); months.push(`${month}-${year}`); currentDate.setUTCMonth(currentDate.getUTCMonth() + 1); } return months; }
