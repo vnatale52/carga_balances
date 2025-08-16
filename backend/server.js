@@ -148,7 +148,6 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         for (let i = 0; i < cuentasDeResultadosKeys.length; i++) {
             const num_cuenta = cuentasDeResultadosKeys[i];
             const group = String(num_cuenta).substring(0, 2);
-
             if (group !== currentGroup) {
                 const subtotalRow = new Array(newHeaders.length).fill(null);
                 subtotalRow[3] = `Subtotal Cuentas ${currentGroup}...`;
@@ -158,16 +157,13 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
                 subtotalAccumulator = Object.fromEntries(numericHeaders.map(h => [h, 0]));
                 currentGroup = group;
             }
-
             const processedRow = processAccountRow(num_cuenta);
             dataForSheet.push(processedRow);
-            
             numericHeaders.forEach(h => {
                 const value = processedRow[newHeaders.indexOf(h)] || 0;
                 subtotalAccumulator[h] += value;
                 grandTotalAccumulator[h] += value;
             });
-
             if (i === cuentasDeResultadosKeys.length - 1) {
                 const lastSubtotalRow = new Array(newHeaders.length).fill(null);
                 lastSubtotalRow[3] = `Subtotal Cuentas ${currentGroup}...`;
@@ -175,7 +171,6 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
                 dataForSheet.push(lastSubtotalRow);
             }
         }
-
         const grandTotalRow = new Array(newHeaders.length).fill(null);
         grandTotalRow[3] = `Total Cuentas de Resultados`;
         numericHeaders.forEach(h => grandTotalRow[newHeaders.indexOf(h)] = grandTotalAccumulator[h]);
@@ -187,6 +182,15 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         otrasCuentasKeys.forEach(key => dataForSheet.push(processAccountRow(key)));
     }
     
+    const emptyRow = new Array(newHeaders.length).fill(null);
+    dataForSheet.push(emptyRow, emptyRow);
+    dataForSheet.push(['Observaciones:']);
+    dataForSheet.push(['Posibles causas que generen diferencias entre el AXI calculado en forma automática por esta app, con respecto al AXI real contabilizado por la entidad:']);
+    dataForSheet.push(['- Ajustes contables con fecha valor, realizados a posteriori del cierre de la presentación al BCRA del respectivo balance mensual TXT y, por ende, que no hayan impactado realmente en el balance presentado ante el BCRA (pero en este caso el banco debiera haber realizado una nueva presentación ante el BCRA rectifcando el anterior balance).']);
+    dataForSheet.push(['- En los casos en que el INDEC hubiere, a posteriori, rectificado o corregido o publicado un nuevo IPIM (y el banco hubiere utilizado el IPIM "provisorio" anteriormente publicado), ello podría generar diferencia en el AXI (debido a que esta app toma como dato para el cálculo del AXI, el balance TXT en moneda constante).']);
+    dataForSheet.push(['- Causa real de diferencias: está App calcula (mediante "ingeniería matemática inversa") el AXI partiendo del saldo en moneda constante expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']);
+    dataForSheet.push(['Saludos ... cuando pueda, seguimos ...']);
+
     return dataForSheet;
 }
 
@@ -260,13 +264,19 @@ app.post('/generate-report', async (req, res) => {
             const totalStyle = { font: { bold: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "FFFF00" } } };
             const subtotalStyle = { font: { bold: true, italic: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "D3D3D3" } } };
             const disclaimerStyle = { font: { italic: true, sz: 9 }, alignment: { wrapText: true, vertical: "center" } };
+            const obsTitleStyle = { font: { bold: true, sz: 12 } };
+            const obsBodyStyle = { font: { sz: 10 }, alignment: { wrapText: true, vertical: "top" } };
+
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cell_ref = xlsx.utils.encode_cell({ c: C, r: R });
                     const cell = worksheet[cell_ref];
-                    if (!cell) continue;
-                    if (R === 2) { cell.s = headerStyle; } 
+                    if (!cell || !cell.v) continue;
+                    
+                    if (cell.v.toString().startsWith('Observaciones:')) { cell.s = obsTitleStyle; } 
+                    else if (cell.v.toString().startsWith('Posibles causas') || cell.v.toString().startsWith('- ') || cell.v.toString().startsWith('Saludos')) { cell.s = obsBodyStyle; } 
+                    else if (R === 2) { cell.s = headerStyle; } 
                     else if (cell.t === 'n') {
                         const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
                         if (descCellValue.startsWith("Total")) { cell.s = totalStyle; }
@@ -278,10 +288,24 @@ app.post('/generate-report', async (req, res) => {
             }
             if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a ${TOC_SHEET_NAME}` };
             if (worksheet['B1']) worksheet['B1'].s = disclaimerStyle;
+            
+            const obsStartRow = dataForSheet.findIndex(row => row[0] && row[0].startsWith('Observaciones:'));
+            if (obsStartRow !== -1) {
+                if (!worksheet['!merges']) worksheet['!merges'] = [];
+                for (let R = obsStartRow; R < dataForSheet.length; R++) {
+                    worksheet['!merges'].push({ s: { r: R, c: 0 }, e: { r: R, c: 8 } });
+                }
+            }
+
             const colWidths = [ { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 45 } ];
             allMonths.forEach(() => { colWidths.push({ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }); });
             worksheet['!cols'] = colWidths;
-            worksheet['!merges'] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } }];
+            if (worksheet['!merges']) {
+                const b1Merge = worksheet['!merges'].find(m => m.s.r === 0 && m.s.c === 1);
+                if (!b1Merge) worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
+            } else {
+                worksheet['!merges'] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } }];
+            }
             worksheet['!rows'] = [{ hpt: 35 }, null, { hpt: 30 }];
             
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
