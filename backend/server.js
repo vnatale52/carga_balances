@@ -1,4 +1,4 @@
-// backend/server.js (Versión 100% Limpia y Funcional)
+// backend/server.js (Versión Definitiva y Corregida - 100% Limpia)
 
 import express from 'express';
 import cors from 'cors';
