@@ -1,10 +1,9 @@
-// frontend/scripts.js (CÓDIGO CORRECTO FINAL)
+// frontend/scripts.js
 
 document.addEventListener('DOMContentLoaded', async () => {
     const select = document.getElementById('entidadSelect');
     const statusDiv = document.getElementById('status');
 
-// ✅ ESTA ES LA LÍNEA CRÍTICA: USA UNA RUTA RELATIVA
     try {
         const response = await fetch("/api/entidades");
       
@@ -71,7 +70,6 @@ document.getElementById('reportForm').addEventListener('submit', async function 
     statusDiv.style.color = 'orange';
  
     try {
-        // ✅ ESTA ES LA SEGUNDA LÍNEA CRÍTICA: TAMBIÉN USA UNA RUTA RELATIVA
         const response = await fetch('/generate-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -101,6 +99,14 @@ document.getElementById('reportForm').addEventListener('submit', async function 
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
+
+            // --- ¡NUEVA LÓGICA DE CONFIRMACIÓN FINAL! ---
+            statusDiv.textContent = '¡Reporte generado con éxito! Revisa tus descargas.';
+            statusDiv.style.color = '#007bff'; // Un color azul de "información"
+
+            setTimeout(() => {
+                statusDiv.textContent = '';
+            }, 8000);
 
         } else {
             const errorText = await response.text();
