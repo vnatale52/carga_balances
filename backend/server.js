@@ -1,4 +1,4 @@
-// backend/server.js (Versión Definitiva y Corregida - 100% Limpia)
+// backend/server.js (Versión Final y Correcta del Servidor)
 
 import express from 'express';
 import cors from 'cors';
@@ -19,68 +19,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // --- FUNCIONES DE PROCESAMIENTO ---
-async function procesarCuentas(filePath) {
-    const cuentas = [];
-    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
-    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-    for await (const linea of rl) {
-        if (linea.trim() === '') continue;
-        const [numCuenta, descripcion] = linea.split('\t');
-        if (!numCuenta || !descripcion) continue;
-        cuentas.push({ num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10), descripcion_cuenta: descripcion.replace(/"/g, '').trim() });
-    }
-    return new Map(cuentas.map(c => [c.num_cuenta, c]));
-}
-
-async function procesarNomina(filePath) {
-    const nomina = [];
-    const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
-    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-    for await (const linea of rl) {
-        if (linea.trim() === '') continue;
-        const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t');
-        if (!numEntidad || !nombreEntidad) continue;
-        nomina.push({ num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10), nombre_entidad: nombreEntidad.replace(/"/g, '').trim(), nombre_corto: (nombreCorto || '').replace(/"/g, '').trim() });
-    }
-    return new Map(nomina.map(e => [e.num_entidad, e]));
-}
-
-function procesarIndices(filePath) {
-    try {
-        const buffer = fs.readFileSync(filePath);
-        const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-        const indicesMap = new Map();
-        for (const row of jsonData) {
-            if (!row || row.length < 2) continue;
-            const fechaValue = row[0];
-            const indiceValue = row[1];
-            if (!indiceValue || !(fechaValue instanceof Date) || isNaN(fechaValue)) continue;
-            const anio = fechaValue.getFullYear();
-            const mes = ('0' + (fechaValue.getMonth() + 1)).slice(-2);
-            const fechaFormatoIndice = `${mes}-${anio}`;
-            const indiceStr = String(indiceValue).replace(',', '.');
-            indicesMap.set(fechaFormatoIndice, parseFloat(indiceStr));
-        }
-        return indicesMap;
-    } catch (error) { console.error("Error al procesar indices.xlsx:", error); return new Map(); }
-}
-
-function getMonthsInRange(start, end) {
-    const startDate = new Date(`${start}-01T00:00:00Z`);
-    const endDate = new Date(`${end}-01T00:00:00Z`);
-    let currentDate = startDate;
-    const months = [];
-    while (currentDate <= endDate) {
-        const month = ('0' + (currentDate.getUTCMonth() + 1)).slice(-2);
-        const year = currentDate.getUTCFullYear();
-        months.push(`${month}-${year}`);
-        currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
-    }
-    return months;
-}
+async function procesarCuentas(filePath) { const cuentas = []; const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' }); const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity }); for await (const linea of rl) { if (linea.trim() === '') continue; const [numCuenta, descripcion] = linea.split('\t'); if (!numCuenta || !descripcion) continue; cuentas.push({ num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10), descripcion_cuenta: descripcion.replace(/"/g, '').trim() }); } return new Map(cuentas.map(c => [c.num_cuenta, c])); }
+async function procesarNomina(filePath) { const nomina = []; const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' }); const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity }); for await (const linea of rl) { if (linea.trim() === '') continue; const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t'); if (!numEntidad || !nombreEntidad) continue; nomina.push({ num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10), nombre_entidad: nombreEntidad.replace(/"/g, '').trim(), nombre_corto: (nombreCorto || '').replace(/"/g, '').trim() }); } return new Map(nomina.map(e => [e.num_entidad, e])); }
+function procesarIndices(filePath) { try { const buffer = fs.readFileSync(filePath); const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true }); const sheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }); const indicesMap = new Map(); for (const row of jsonData) { if (!row || row.length < 2) continue; const fechaValue = row[0]; const indiceValue = row[1]; if (!indiceValue || !(fechaValue instanceof Date) || isNaN(fechaValue)) continue; const anio = fechaValue.getFullYear(); const mes = ('0' + (fechaValue.getMonth() + 1)).slice(-2); const fechaFormatoIndice = `${mes}-${anio}`; const indiceStr = String(indiceValue).replace(',', '.'); indicesMap.set(fechaFormatoIndice, parseFloat(indiceStr)); } return indicesMap; } catch (error) { console.error("Error al procesar indices.xlsx:", error); return new Map(); } }
+function getMonthsInRange(start, end) { const startDate = new Date(`${start}-01T00:00:00Z`); const endDate = new Date(`${end}-01T00:00:00Z`); let currentDate = startDate; const months = []; while (currentDate <= endDate) { const month = ('0' + (currentDate.getUTCMonth() + 1)).slice(-2); const year = currentDate.getUTCFullYear(); months.push(`${month}-${year}`); currentDate.setUTCMonth(currentDate.getUTCMonth() + 1); } return months; }
 
 function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMonths, indicesMap, num_entidad) {
     if (!balancesDeEstaEntidad || balancesDeEstaEntidad.length === 0) return [];
@@ -156,19 +98,13 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     dataForSheet.push(['- Ajustes contables con fecha valor, realizados a posteriori del cierre de la presentación al BCRA del respectivo balance mensual TXT y, por ende, que no hayan impactado realmente en el balance presentado ante el BCRA (pero en este caso el banco debiera haber realizado una nueva presentación ante el BCRA rectifcando el anterior balance).']);
     dataForSheet.push(['- En los casos en que el INDEC hubiere, a posteriori, rectificado o corregido o publicado un nuevo IPIM (y el banco hubiere utilizado el IPIM "provisorio" anteriormente publicado), ello podría generar diferencia en el AXI (debido a que esta app toma como dato para el cálculo del AXI, el balance TXT en moneda constante).']);
     dataForSheet.push(['- Causa real de diferencias: está App calcula (mediante "ingeniería matemática inversa") el AXI partiendo del saldo en moneda constante expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']);
-    dataForSheet.push(['Saludos ... cuando pueda, seguimos ...']);
+    dataForSheet.push(['Para cualquier comentario, surgerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ...']);
+    
     return dataForSheet;
 }
 
 // --- ENDPOINTS ---
-app.get('/api/entidades', async (req, res) => {
-    try {
-        const nominaPath = path.join(__dirname, '../frontend/data/nomina.txt');
-        if (!fs.existsSync(nominaPath)) return res.status(404).json({ message: 'Archivo nomina.txt no encontrado.' });
-        const nominaMap = await procesarNomina(nominaPath);
-        res.json(Array.from(nominaMap.values()));
-    } catch (error) { res.status(500).json({ message: 'Error interno al leer entidades.' }); }
-});
+app.get('/api/entidades', async (req, res) => { try { const nominaPath = path.join(__dirname, '../frontend/data/nomina.txt'); if (!fs.existsSync(nominaPath)) return res.status(404).json({ message: 'Archivo nomina.txt no encontrado.' }); const nominaMap = await procesarNomina(nominaPath); res.json(Array.from(nominaMap.values())); } catch (error) { res.status(500).json({ message: 'Error interno al leer entidades.' }); } });
 
 app.post('/generate-report', async (req, res) => {
     try {
@@ -214,40 +150,29 @@ app.post('/generate-report', async (req, res) => {
             let sheetName = `${String(num_entidad).padStart(5, '0')} - ${infoEntidad.nombre_corto || infoEntidad.nombre_entidad || ''}`.trim().substring(0, 31).replace(/[\\/*?[\]]/g, '');
             tocSheetData.push([sheetName, num_entidad, infoEntidad.nombre_entidad || '']);
             const worksheet = xlsx.utils.aoa_to_sheet(dataForSheet);
-
             const numberFormat2Decimals = '#,##0.00';
             const percentFormat4Decimals = '0.0000%';
             const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
+            const totalStyle = { font: { bold: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "FFFF00" } } };
+            const subtotalStyle = { font: { bold: true, italic: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "D3D3D3" } } };
             const disclaimerStyle = { font: { italic: true, sz: 9 }, alignment: { wrapText: true, vertical: "center" } };
             const obsTitleStyle = { font: { bold: true, sz: 12 } };
             const obsBodyStyle = { font: { sz: 10 }, alignment: { wrapText: true, vertical: "top" } };
-            const totalNumericStyle = { font: { bold: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "FFFF00" } } };
-            const subtotalNumericStyle = { font: { bold: true, italic: true }, numFmt: numberFormat2Decimals, fill: { fgColor: { rgb: "D3D3D3" } } };
-            const totalTextStyle = { font: { bold: true }, fill: { fgColor: { rgb: "FFFF00" } } };
-            const subtotalTextStyle = { font: { bold: true, italic: true }, fill: { fgColor: { rgb: "D3D3D3" } } };
-
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
-                const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
-                const isTotalRow = descCellValue.startsWith("Total");
-                const isSubtotalRow = descCellValue.startsWith("Subtotal");
-
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cell_ref = xlsx.utils.encode_cell({ c: C, r: R });
                     const cell = worksheet[cell_ref];
                     if (!cell || !cell.v) continue;
-                    
                     const cellValueStr = cell.v.toString();
-                    if (R === 2) { cell.s = headerStyle; continue; }
-                    if (cellValueStr.startsWith('Observaciones:')) { cell.s = obsTitleStyle; continue; } 
-                    if (cellValueStr.startsWith('Posibles causas') || cellValueStr.startsWith('- ') || cellValueStr.startsWith('Saludos')) { cell.s = obsBodyStyle; continue; } 
-
-                    if (isTotalRow) {
-                        cell.s = (cell.t === 'n') ? totalNumericStyle : totalTextStyle;
-                    } else if (isSubtotalRow) {
-                        cell.s = (cell.t === 'n') ? subtotalNumericStyle : subtotalTextStyle;
-                    } else if (cell.t === 'n') {
-                        if (R === 1) { cell.z = percentFormat4Decimals; }
+                    if (cellValueStr.startsWith('Observaciones:')) { cell.s = obsTitleStyle; } 
+                    else if (cellValueStr.startsWith('Posibles causas') || cellValueStr.startsWith('- ') || cellValueStr.startsWith('Saludos')) { cell.s = obsBodyStyle; } 
+                    else if (R === 2) { cell.s = headerStyle; } 
+                    else if (cell.t === 'n') {
+                        const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
+                        if (descCellValue.startsWith("Total")) { cell.s = totalStyle; }
+                        else if (descCellValue.startsWith("Subtotal")) { cell.s = subtotalStyle; }
+                        else if (R === 1) { cell.z = percentFormat4Decimals; }
                         else { cell.z = numberFormat2Decimals; }
                     }
                 }
@@ -257,14 +182,18 @@ app.post('/generate-report', async (req, res) => {
             const obsStartRow = dataForSheet.findIndex(row => typeof row[0] === 'string' && row[0].startsWith('Observaciones:'));
             if (obsStartRow !== -1) {
                 if (!worksheet['!merges']) worksheet['!merges'] = [];
-                for (let R = obsStartRow; R < dataForSheet.length; R++) { worksheet['!merges'].push({ s: { r: R, c: 0 }, e: { r: R, c: 8 } }); }
+                for (let R = obsStartRow; R < dataForSheet.length; R++) {
+                    worksheet['!merges'].push({ s: { r: R, c: 0 }, e: { r: R, c: 8 } });
+                }
             }
             const colWidths = [ { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 45 } ];
             allMonths.forEach(() => { colWidths.push({ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }); });
             worksheet['!cols'] = colWidths;
             if (!worksheet['!merges']) worksheet['!merges'] = [];
             const b1MergeExists = worksheet['!merges'].some(m => m.s.r === 0 && m.s.c === 1);
-            if (!b1MergeExists) { worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } }); }
+            if (!b1MergeExists) {
+                worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
+            }
             worksheet['!rows'] = [{ hpt: 35 }, null, { hpt: 30 }];
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
