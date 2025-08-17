@@ -98,7 +98,8 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     dataForSheet.push(['- Ajustes contables con fecha valor, realizados a posteriori del cierre de la presentación al BCRA del respectivo balance mensual TXT y, por ende, que no hayan impactado realmente en el balance presentado ante el BCRA (pero en este caso el banco debiera haber realizado una nueva presentación ante el BCRA rectifcando el anterior balance).']);
     dataForSheet.push(['- En los casos en que el INDEC hubiere, a posteriori, rectificado o corregido o publicado un nuevo IPIM (y el banco hubiere utilizado el IPIM "provisorio" anteriormente publicado), ello podría generar diferencia en el AXI (debido a que esta app toma como dato para el cálculo del AXI, el balance TXT en moneda constante).']);
     dataForSheet.push(['- Causa real de diferencias: está App calcula (mediante "ingeniería matemática inversa") el AXI partiendo del saldo en moneda constante expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']);
-    dataForSheet.push(['Saludos ... cuando pueda, seguimos ...']);
+    dataForSheet.push(['Para cualquier comentario, surgerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ...']);
+    
     return dataForSheet;
 }
 
