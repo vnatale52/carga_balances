@@ -1,4 +1,4 @@
-// frontend/scripts.js
+// frontend/scripts.js (Versión Final y Correcta del Frontend)
 
 document.addEventListener('DOMContentLoaded', async () => {
     const select = document.getElementById('entidadSelect');
@@ -61,9 +61,7 @@ document.getElementById('reportForm').addEventListener('submit', async function 
     const filtros = {
         entidad: selectedEntidades, 
         balhistDesde,
-        balhistHasta,
-        indicesDesde: balhistDesde,
-        indicesHasta: balhistHasta
+        balhistHasta
     };
 
     statusDiv.textContent = 'Procesando...';
@@ -100,9 +98,8 @@ document.getElementById('reportForm').addEventListener('submit', async function 
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
 
-            // --- ¡NUEVA LÓGICA DE CONFIRMACIÓN FINAL! ---
             statusDiv.textContent = '¡Reporte generado con éxito! Revisa tus descargas.';
-            statusDiv.style.color = '#007bff'; // Un color azul de "información"
+            statusDiv.style.color = '#007bff';
 
             setTimeout(() => {
                 statusDiv.textContent = '';
