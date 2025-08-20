@@ -10,7 +10,7 @@
 
     <div class="container">
         <h1>Generador de Reportes de Balance</h1>
-        <h4>Página en desarrollo - Por vnatale52@gmail.com</h3>
+        <h4>Página en desarrollo - Por vnatale52@gmail.com</h4>
         <p>
             Los archivos de datos - <code>balhist.txt</code>, <code>cuentas.txt</code>, <code>nomina.txt</code> e <code>indices.xlsx</code> -
             son cargados automáticamente, por esta aplicación, desde una carpeta <code>frontend/data</code>, que está en el hosting server. 
@@ -26,7 +26,6 @@
                     <h3>Filtros para el Reporte</h3>
                     <div class="form-group">
                         <label for="entidadSelect">Número de Entidad:</label>
-                        <!-- ATENCIÓN: Se ha añadido el atributo "multiple" -->
                         <select id="entidadSelect" name="entidad" required multiple style="height: 150px;">
                             <option value="" disabled>Cargando entidades...</option>
                         </select>
@@ -45,7 +44,7 @@
                 </div>
             </fieldset>
 
-            <button type="submit">Generar Reporte Excel</button>
+            <button type="submit" id="generateReportBtn">Generar Reporte Excel</button>
         </form>
 
         <div id="status"></div>
@@ -55,6 +54,3 @@
 </body>
 
 </html>
-
-
-

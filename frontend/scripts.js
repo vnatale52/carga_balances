@@ -1,4 +1,4 @@
-// frontend/scripts.js (Versión Final y Correcta del Frontend)
+// frontend/scripts.js (Versión Mejorada)
 
 document.addEventListener('DOMContentLoaded', async () => {
     const select = document.getElementById('entidadSelect');
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch("/api/entidades");
       
-        if (!response.ok) throw new Error('No se pudieron cargar las entidades.');
+        if (!response.ok) throw new Error(`No se pudieron cargar las entidades (código: ${response.status})`);
         
         const entidades = await response.json();
         select.innerHTML = ''; 
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
         select.innerHTML = '<option value="" disabled selected>Error al cargar entidades</option>';
-        statusDiv.textContent = `Error: ${error.message}`;
+        statusDiv.textContent = `Error de red: ${error.message}`;
         statusDiv.style.color = 'red';
     }
 });
@@ -46,6 +46,7 @@ document.getElementById('reportForm').addEventListener('submit', async function 
 
     const statusDiv = document.getElementById('status');
     const select = document.getElementById('entidadSelect');
+    const generateBtn = document.getElementById('generateReportBtn');
     
     const selectedEntidades = Array.from(select.selectedOptions).map(option => option.value);
 
@@ -64,7 +65,9 @@ document.getElementById('reportForm').addEventListener('submit', async function 
         balhistHasta
     };
 
-    statusDiv.textContent = 'Procesando...';
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generando...';
+    statusDiv.textContent = 'Procesando... Esto puede tardar varios minutos.';
     statusDiv.style.color = 'orange';
  
     try {
@@ -83,14 +86,15 @@ document.getElementById('reportForm').addEventListener('submit', async function 
             link.href = URL.createObjectURL(blob);
             
             let nombreEntidad;
-            if (selectedEntidades.includes('0') || selectedEntidades.length > 5) {
+            if (selectedEntidades.includes('0')) {
+                nombreEntidad = "Todas_Entidades";
+            } else if (selectedEntidades.length > 5) {
                 nombreEntidad = "Multiples_Entidades";
             } else if (selectedEntidades.length > 1) {
                 nombreEntidad = `Entidades_${selectedEntidades.join('_')}`;
             } else {
                 nombreEntidad = `Entidad_${selectedEntidades[0]}`;
             }
-            if (selectedEntidades.includes('0')) nombreEntidad = "Todas_Entidades";
 
             link.download = `Reporte_Pivoteado_${nombreEntidad}_${balhistDesde}_a_${balhistHasta}.xlsx`;
             document.body.appendChild(link);
@@ -114,5 +118,8 @@ document.getElementById('reportForm').addEventListener('submit', async function 
         statusDiv.textContent = `Error: ${error.message}`;
         statusDiv.style.color = 'red';
         console.error('Detalle del error:', error);
+    } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generar Reporte Excel';
     }
 });
