@@ -1,4 +1,4 @@
-// backend/server.js (Versión con Formato de Excel Actualizado)
+// backend/server.js (Versión Final con Todos los Formatos Corregidos)
 
 import express from 'express';
 import cors from 'cors';
@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// --- FUNCIONES DE PROCESAMIENTO (Sin cambios) ---
+// --- FUNCIONES DE PROCESAMIENTO (Sin cambios en su lógica) ---
 async function procesarCuentas(filePath) {
     const cuentas = [];
     const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
@@ -28,10 +28,7 @@ async function procesarCuentas(filePath) {
         if (linea.trim() === '') continue;
         const [numCuenta, descripcion] = linea.split('\t');
         if (!numCuenta || !descripcion) continue;
-        cuentas.push({
-            num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10),
-            descripcion_cuenta: descripcion.replace(/"/g, '').trim()
-        });
+        cuentas.push({ num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10), descripcion_cuenta: descripcion.replace(/"/g, '').trim() });
     }
     return new Map(cuentas.map(c => [c.num_cuenta, c]));
 }
@@ -44,11 +41,7 @@ async function procesarNomina(filePath) {
         if (linea.trim() === '') continue;
         const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t');
         if (!numEntidad || !nombreEntidad) continue;
-        nomina.push({
-            num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10),
-            nombre_entidad: nombreEntidad.replace(/"/g, '').trim(),
-            nombre_corto: (nombreCorto || '').replace(/"/g, '').trim()
-        });
+        nomina.push({ num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10), nombre_entidad: nombreEntidad.replace(/"/g, '').trim(), nombre_corto: (nombreCorto || '').replace(/"/g, '').trim() });
     }
     return new Map(nomina.map(e => [e.num_entidad, e]));
 }
@@ -93,7 +86,7 @@ function getMonthsInRange(start, end) {
     return months;
 }
 
-// --- LÓGICA DE PREPARACIÓN DE DATOS (Sin cambios) ---
+// --- LÓGICA DE PREPARACIÓN DE DATOS (Sin cambios en su lógica) ---
 function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMonths, indicesMap, num_entidad) {
     if (!balancesDeEstaEntidad || balancesDeEstaEntidad.length === 0) return [];
     const infoEntidad = nominaMap.get(num_entidad) || { nombre_entidad: 'Desconocido', num_entidad };
@@ -221,17 +214,27 @@ app.post('/generate-report', async (req, res) => {
         const sortedEntityNumbers = Array.from(balancesPorEntidad.keys()).sort((a, b) => a - b);
 
         // =================================================================================
-        // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL
+        // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL (Revisado y Comentado)
         // =================================================================================
-        const defaultFont = { name: "Arial", sz: 9 }; // Requerimiento: Arial o Calibri tamaño 9
+        
+        // REQUERIMIENTO 1: Utiliza un Font tamaño 9, calibri o arial.
+        const defaultFont = { name: "Arial", sz: 9 }; 
+        
         const allBorders = {
             top: { style: "thin", color: { auto: 1 } },
             bottom: { style: "thin", color: { auto: 1 } },
             left: { style: "thin", color: { auto: 1 } },
             right: { style: "thin", color: { auto: 1 } },
         };
-        // Requerimiento: Formato con separador de miles y 2 decimales
-        const numberFormat = "#,##0.00"; 
+        
+        // REQUERIMIENTO 4: Formato numérico con separador de miles y 2 decimales.
+        // NOTA: El formato "#,##0.00" es el estándar universal para Excel.
+        // Excel automáticamente usará un PUNTO (.) o una COMA (,) como separador de miles
+        // según la configuración regional del computador donde se abra el archivo.
+        const numberFormatWithSeparators = "#,##0.00"; 
+
+        // REQUERIMIENTO 3: “% del Coeficiente AXI” en porcentaje con 4 dígitos decimales.
+        const percentFormatWith4Decimals = '0.0000%'; 
 
         const headerStyle = {
             font: { ...defaultFont, bold: true, color: { rgb: "FFFFFF" } },
@@ -241,21 +244,20 @@ app.post('/generate-report', async (req, res) => {
         };
         const totalStyle = {
             font: { ...defaultFont, bold: true },
-            numFmt: numberFormat,
+            numFmt: numberFormatWithSeparators,
             fill: { fgColor: { rgb: "FFFF00" } },
             border: allBorders
         };
         const subtotalStyle = {
             font: { ...defaultFont, bold: true, italic: true },
-            numFmt: numberFormat,
+            numFmt: numberFormatWithSeparators,
             fill: { fgColor: { rgb: "D3D3D3" } },
             border: allBorders
         };
         const defaultCellStyle = { font: defaultFont, border: allBorders };
         const integerFormatStyle = { ...defaultCellStyle, numFmt: "0" };
-        const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormat };
-        // Requerimiento: Porcentaje con 4 decimales
-        const percentFormatStyle = { ...defaultCellStyle, numFmt: '0.0000%' }; 
+        const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormatWithSeparators };
+        const percentFormatStyle = { ...defaultCellStyle, numFmt: percentFormatWith4Decimals };
         
         const obsTitleStyle = { font: { ...defaultFont, sz: 10, bold: true } };
         const obsBodyStyle = { font: defaultFont, alignment: { wrapText: true, vertical: "top" } };
@@ -286,27 +288,29 @@ app.post('/generate-report', async (req, res) => {
                     const cell = worksheet[cell_ref];
                     if (!cell) continue;
 
+                    // 1. Aplicar estilo por defecto a todas las celdas
                     cell.s = defaultCellStyle;
 
-                    if (R === 0 && C === 1) {
+                    // 2. Sobrescribir con estilos específicos
+                    if (R === 0 && C === 1) { // Celda de disclaimer
                         cell.s = disclaimerStyle;
-                    } else if (R === 2) {
+                    } else if (R === 2) { // Fila de Títulos de Columna
                         cell.s = headerStyle;
                     } else if (cell.v?.toString().startsWith('Observaciones')) {
                          cell.s = obsTitleStyle;
                     } else if (cell.v?.toString().startsWith('Posibles causas') || cell.v?.toString().startsWith('- ') || cell.v?.toString().startsWith('Para cualquier')) {
                          cell.s = obsBodyStyle;
-                    } else if (cell.t === 'n') {
+                    } else if (cell.t === 'n') { // Si la celda es de tipo numérico
                          const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
                          if (descCellValue.startsWith("Total")) {
                              cell.s = totalStyle;
                          } else if (descCellValue.startsWith("Subtotal")) {
                              cell.s = subtotalStyle;
-                         } else if (R === 1 && C > 3) {
+                         } else if (R === 1 && C > 3) { // Fila de Coeficiente AXI
                              cell.s = percentFormatStyle;
-                         } else if (C === 0 || C === 2) {
+                         } else if (C === 0 || C === 2) { // Columnas Entidad y Cuenta
                             cell.s = integerFormatStyle;
-                         } else {
+                         } else { // El resto de las celdas numéricas
                             cell.s = decimalFormatStyle;
                          }
                     }
@@ -330,9 +334,9 @@ app.post('/generate-report', async (req, res) => {
             if (!worksheet['!merges']) worksheet['!merges'] = [];
             worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
             
-            // Requerimiento: Reducir a la mitad el alto de las filas 1 y 3
-            worksheet['!rows'][0] = { hpt: 18 }; // Altura para la primera fila
-            worksheet['!rows'][2] = { hpt: 23 }; // Altura para la fila de títulos
+            // REQUERIMIENTO 2: Reduce a la mitad el alto de la primer y tercer filas.
+            worksheet['!rows'][0] = { hpt: 17.5 }; // Altura para la primera fila
+            worksheet['!rows'][2] = { hpt: 22.5 }; // Altura para la fila de títulos
             
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
