@@ -100,7 +100,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     dataForSheet.push(['- Causa real de diferencias: está App calcula (mediante "ingeniería matemática inversa") el AXI partiendo del saldo en moneda constante expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']);
     dataForSheet.push(['- Para las cuentas de ingresos cuyas descripciones comiencen con "Resultado por", en los casos en que el saldo mensual de tales cuentas de ingresos quede invertido, dicho saldo, por expresa norma del BCRA, debe ser reclasificado  a su correspondiente cuenta de egresos (por ejemplo, Resultado de Títulos ...). En este caso, se produce una diferencia en el AXI calculado por esta aplicación con respecto al AXI realmente contabilizado por el banco (pero que se termina compensando con la diferencia, a su vez, generada en la cuenta de destino de dicha reclasificación).']);
     dataForSheet.push(['- Para que el AXI calculado por esta aplicación coincida con el AXI real, contabilizado por el Banco,  debe definirse en esta aplicación, como rango de fechas, necesariamente desde Enero a Diciembre de un determinado año de ejercicio contable. Si no fuera así, el AXI calculado por esta applicación sería incompleto (debido a que no abarca el ejercicio completo).']);   
-    dataForSheet.push(['El total de diferencias que surjan al cierre de cada ejercicio contable (Diciembre),  entre  a) el  total del AXI calculado por esta aplicación para las cuentas de resultados, con respecto a  b) el  total del AXI real contabilizado por el Banco,  coincidirá, a su vez, con  c) el total del saldo histórico acumulado calculado por esta aplicación, con respecto a  d) el total histórico real contabilizado por el banco (debido a la lógica matemática implementada en el código).']);  
+    dataForSheet.push(['- El total de diferencias que surjan al cierre de cada ejercicio contable (Diciembre),  entre  a) el  total del AXI calculado por esta aplicación para las cuentas de resultados, con respecto a  b) el  total del AXI real contabilizado por el Banco,  coincidirá, a su vez, con  c) el total del saldo histórico acumulado calculado por esta aplicación, con respecto a  d) el total histórico real contabilizado por el banco (debido a la lógica matemática implementada en el código).']);  
     dataForSheet.push(['Para cualquier comentario, surgerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ... and happy coding and calculating ...']);   
     return dataForSheet;
 }
@@ -222,5 +222,6 @@ app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 
 });
+
 
 
