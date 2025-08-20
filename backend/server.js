@@ -1,4 +1,4 @@
-// backend/server.js (Versión con Sintaxis Corregida y Formato Mejorado)
+// backend/server.js (Versión con Formato de Excel Actualizado)
 
 import express from 'express';
 import cors from 'cors';
@@ -19,10 +19,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// =================================================================================
-// INICIO: FUNCIONES DE PROCESAMIENTO (REFORMATEADAS PARA CORREGIR EL ERROR)
-// =================================================================================
-
+// --- FUNCIONES DE PROCESAMIENTO (Sin cambios) ---
 async function procesarCuentas(filePath) {
     const cuentas = [];
     const fileStream = fs.createReadStream(filePath, { encoding: 'latin1' });
@@ -96,12 +93,7 @@ function getMonthsInRange(start, end) {
     return months;
 }
 
-// =================================================================================
-// FIN: FUNCIONES DE PROCESAMIENTO
-// =================================================================================
-
-
-// --- LÓGICA DE PREPARACIÓN DE DATOS ---
+// --- LÓGICA DE PREPARACIÓN DE DATOS (Sin cambios) ---
 function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMonths, indicesMap, num_entidad) {
     if (!balancesDeEstaEntidad || balancesDeEstaEntidad.length === 0) return [];
     const infoEntidad = nominaMap.get(num_entidad) || { nombre_entidad: 'Desconocido', num_entidad };
@@ -228,13 +220,18 @@ app.post('/generate-report', async (req, res) => {
         
         const sortedEntityNumbers = Array.from(balancesPorEntidad.keys()).sort((a, b) => a - b);
 
-        const defaultFont = { name: "Arial", sz: 9 };
+        // =================================================================================
+        // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL
+        // =================================================================================
+        const defaultFont = { name: "Arial", sz: 9 }; // Requerimiento: Arial o Calibri tamaño 9
         const allBorders = {
             top: { style: "thin", color: { auto: 1 } },
             bottom: { style: "thin", color: { auto: 1 } },
             left: { style: "thin", color: { auto: 1 } },
             right: { style: "thin", color: { auto: 1 } },
         };
+        // Requerimiento: Formato con separador de miles y 2 decimales
+        const numberFormat = "#,##0.00"; 
 
         const headerStyle = {
             font: { ...defaultFont, bold: true, color: { rgb: "FFFFFF" } },
@@ -244,24 +241,28 @@ app.post('/generate-report', async (req, res) => {
         };
         const totalStyle = {
             font: { ...defaultFont, bold: true },
-            numFmt: "#,##0.00",
+            numFmt: numberFormat,
             fill: { fgColor: { rgb: "FFFF00" } },
             border: allBorders
         };
         const subtotalStyle = {
             font: { ...defaultFont, bold: true, italic: true },
-            numFmt: "#,##0.00",
+            numFmt: numberFormat,
             fill: { fgColor: { rgb: "D3D3D3" } },
             border: allBorders
         };
         const defaultCellStyle = { font: defaultFont, border: allBorders };
         const integerFormatStyle = { ...defaultCellStyle, numFmt: "0" };
-        const decimalFormatStyle = { ...defaultCellStyle, numFmt: "#,##0.00" };
-        const percentFormatStyle = { ...defaultCellStyle, numFmt: '0.0000%' };
+        const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormat };
+        // Requerimiento: Porcentaje con 4 decimales
+        const percentFormatStyle = { ...defaultCellStyle, numFmt: '0.0000%' }; 
         
         const obsTitleStyle = { font: { ...defaultFont, sz: 10, bold: true } };
         const obsBodyStyle = { font: defaultFont, alignment: { wrapText: true, vertical: "top" } };
         const disclaimerStyle = { font: { ...defaultFont, sz: 8, italic: true }, alignment: { wrapText: true, vertical: "center" } };
+        // =================================================================================
+        // FIN: DEFINICIÓN DE ESTILOS DE EXCEL
+        // =================================================================================
 
         for (const num_entidad of sortedEntityNumbers) {
             console.log(`Generating sheet for entity ${num_entidad}...`);
@@ -329,8 +330,9 @@ app.post('/generate-report', async (req, res) => {
             if (!worksheet['!merges']) worksheet['!merges'] = [];
             worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
             
-            worksheet['!rows'][0] = { hpt: 35 };
-            worksheet['!rows'][2] = { hpt: 45 }; 
+            // Requerimiento: Reducir a la mitad el alto de las filas 1 y 3
+            worksheet['!rows'][0] = { hpt: 18 }; // Altura para la primera fila
+            worksheet['!rows'][2] = { hpt: 23 }; // Altura para la fila de títulos
             
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
