@@ -34,7 +34,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     allMonths.forEach(month => { const headersForMonth = [`${month} Saldo en moneda constante`, `${month} Saldo Histórico solo del mes`, `${month} Saldo Histórico acumulado al mes`, `${month} AXI mensual solo del mes`, `${month} AXI acumulado al mes`]; newHeaders.push(...headersForMonth); numericHeaders.push(...headersForMonth); });
     const firstRowContent = new Array(newHeaders.length).fill(null);
     firstRowContent[0] = '<< Volver a la Tabla de Contenidos';
-    firstRowContent[1] = "Cifras expresadas en miles de pesos argentinos – Elaborado en base a información publicada por el B.C.R.A y al Indice-FACPCE-Res.-JG-539-18.   A los fines específicos de esta aplicación, el ajuste por inflación está calculado – únicamente – para las cuentas de resultados, es decir, no está calculado para los rubros no monetarios de las cuentas patrimoniales (por ejemplo, Bienes de Uso, Intangibles y cuentas el Patrimonio Neto.";
+    firstRowContent[1] = "Cifras expresadas en miles de pesos argentinos. Elaborado en base a información publicada por el B.C.R.A y al Indice-FACPCE-Res.-JG-539-18.   A los fines específicos de esta aplicación, el ajuste por inflación está calculado – únicamente – para las cuentas de resultados, es decir, no está calculado también para los rubros no monetarios de las cuentas patrimoniales (por ejemplo, Bienes de Uso, Intangibles y cuentas del Patrimonio Neto).";
     const axiCoefficients = allMonths.map((month, i) => { if (i === 0) return 0; const currentMonthIndex = indicesMap.get(month); const previousMonthIndex = indicesMap.get(allMonths[i - 1]); return (currentMonthIndex && previousMonthIndex) ? (currentMonthIndex / previousMonthIndex) - 1 : 0; });
     const axiRow = new Array(newHeaders.length).fill(null);
     axiRow[3] = '% del Coeficiente AXI';
@@ -222,6 +222,7 @@ app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 
 });
+
 
 
 
