@@ -1,4 +1,4 @@
-// backend/server.js (Versión Final con Formatos de Número y Fuente Ajustados)
+// backend/server.js (Versión Final con Formatos de Número y Fuente Específicos)
 
 import express from 'express';
 import cors from 'cors';
@@ -217,8 +217,8 @@ app.post('/generate-report', async (req, res) => {
         // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL (Ajustes Finales)
         // =================================================================================
         
-        // REQUERIMIENTO 1: Achica de 12 a 10 el tamaño del font utilizado.
-        const defaultFont = { name: "Arial", sz: 10 }; 
+        // REQUERIMIENTO 4: Reduce el tamaño del font en cada página.
+        const defaultFont = { name: "Arial", sz: 9 }; 
         
         const allBorders = {
             top: { style: "thin", color: { auto: 1 } },
@@ -227,9 +227,11 @@ app.post('/generate-report', async (req, res) => {
             right: { style: "thin", color: { auto: 1 } },
         };
         
-        // REQUERIMIENTO 2: Formato numérico con punto como separador de miles y 2 decimales.
-        const numberFormatWithSeparators = "#,##0.00"; 
-        const percentFormatWith4Decimals = '0.0000%'; 
+        // REQUERIMIENTO 2: -245457 sea mostrado como -245.457,00
+        const numberFormatWithSeparators = '#.##0,00';
+        
+        // REQUERIMIENTO 1: 0,0469... sea mostrado como 4,694% 
+        const percentFormatWith3Decimals = '0,000%'; 
 
         const headerStyle = {
             font: { ...defaultFont, bold: true, color: { rgb: "FFFFFF" } },
@@ -252,9 +254,9 @@ app.post('/generate-report', async (req, res) => {
         const defaultCellStyle = { font: defaultFont, border: allBorders };
         const integerFormatStyle = { ...defaultCellStyle, numFmt: "0" };
         const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormatWithSeparators };
-        const percentFormatStyle = { ...defaultCellStyle, numFmt: percentFormatWith4Decimals };
+        const percentFormatStyle = { ...defaultCellStyle, numFmt: percentFormatWith3Decimals };
         
-        const obsTitleStyle = { font: { ...defaultFont, sz: 11, bold: true } };
+        const obsTitleStyle = { font: { ...defaultFont, sz: 10, bold: true } };
         const obsBodyStyle = { font: defaultFont, alignment: { wrapText: true, vertical: "top" } };
         const disclaimerStyle = { font: { ...defaultFont, sz: 8, italic: true }, alignment: { wrapText: true, vertical: "center" } };
         // =================================================================================
@@ -276,7 +278,7 @@ app.post('/generate-report', async (req, res) => {
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
                 if (!worksheet['!rows']) worksheet['!rows'] = [];
-                if (R > 2) worksheet['!rows'][R] = { hpt: 12.5 }; // Ligeramente más alto para font 10
+                if (R > 2) worksheet['!rows'][R] = { hpt: 12 }; 
 
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cell_ref = xlsx.utils.encode_cell({ c: C, r: R });
@@ -310,7 +312,7 @@ app.post('/generate-report', async (req, res) => {
                 }
             }
 
-            if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a ${TOC_SHEET_NAME}` };
+            if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a la hoja ${TOC_SHEET_NAME}` };
             
             const obsStartRow = dataForSheet.findIndex(row => typeof row[0] === 'string' && row[0].startsWith('Observaciones:'));
             if (obsStartRow !== -1) {
@@ -327,8 +329,8 @@ app.post('/generate-report', async (req, res) => {
             if (!worksheet['!merges']) worksheet['!merges'] = [];
             worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
             
-            worksheet['!rows'][0] = { hpt: 17.5 }; 
-            worksheet['!rows'][2] = { hpt: 22.5 }; 
+            worksheet['!rows'][0] = { hpt: 17 }; 
+            worksheet['!rows'][2] = { hpt: 22 }; 
             
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
