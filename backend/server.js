@@ -93,13 +93,14 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     if (otrasCuentasKeys.length > 0) { if (cuentasDeResultadosKeys.length > 0) dataForSheet.push(new Array(newHeaders.length).fill(null)); otrasCuentasKeys.forEach(key => dataForSheet.push(processAccountRow(key))); }
     const emptyRow = new Array(newHeaders.length).fill(null);
     dataForSheet.push(emptyRow, emptyRow);
-    dataForSheet.push(['Observaciones:']);
+    dataForSheet.push(['Observaciones al 19-08-2025:']);
     dataForSheet.push(['Posibles causas que generen diferencias entre el AXI calculado en forma automática por esta app, con respecto al AXI real contabilizado por la entidad:']);
     dataForSheet.push(['- Ajustes contables con fecha valor, realizados a posteriori del cierre de la presentación al BCRA del respectivo balance mensual TXT y, por ende, que no hayan impactado realmente en el balance presentado ante el BCRA (pero en este caso el banco debiera haber realizado una nueva presentación ante el BCRA rectifcando el anterior balance).']);
     dataForSheet.push(['- En los casos en que el INDEC hubiere, a posteriori, rectificado o corregido o publicado un nuevo IPIM (y el banco hubiere utilizado el IPIM "provisorio" anteriormente publicado), ello podría generar diferencia en el AXI (debido a que esta app toma como dato para el cálculo del AXI, el balance TXT en moneda constante).']);
     dataForSheet.push(['- Causa real de diferencias: está App calcula (mediante "ingeniería matemática inversa") el AXI partiendo del saldo en moneda constante expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']);
-    dataForSheet.push(['Para cualquier comentario, surgerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ...']);
-    
+    dataForSheet.push(['Para las cuentas de ingresos cuyas descripciones comiencen con "Resultado por", en los casos en que el saldo mensual de tales cuentas de ingresos quede invertido, dicho saldo, por expresa norma del BCRA, debe ser reclasificado  a su correspondiente cuenta de egresos (por ejemplo, Resultado de Títulos ...). En este caso, se produce una diferencia en el AXI calculado por esta aplicación con respecto al AXI realmente contabilizado por el banco (pero que se termina compensando con la diferencia, a su vez, generada en la cuenta de destino de dicha reclasificación).']);
+    dataForSheet.push(['Para que el AXI calculado por esta aplicación coincida con el AXI real, contabilizado por el Banco,  debe definirse en esta aplicación, como rango de fechas, necesariamente desde Enero a Diciembre de un determinado año de ejercicio contable. Si no fuera así, el AXI calculado por esta applicación sería incompleto (debido a que no abarca el ejercicio completo).']);   
+    dataForSheet.push(['Para cualquier comentario, surgerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ... and happy coding and calculating ...']);   
     return dataForSheet;
 }
 
@@ -218,4 +219,5 @@ app.post('/generate-report', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+
 });
