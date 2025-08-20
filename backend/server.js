@@ -1,4 +1,4 @@
-// backend/server.js (Versión Final con Todos los Formatos Corregidos)
+// backend/server.js (Versión Final con Formatos de Número y Fuente Ajustados)
 
 import express from 'express';
 import cors from 'cors';
@@ -214,11 +214,11 @@ app.post('/generate-report', async (req, res) => {
         const sortedEntityNumbers = Array.from(balancesPorEntidad.keys()).sort((a, b) => a - b);
 
         // =================================================================================
-        // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL (Revisado y Comentado)
+        // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL (Ajustes Finales)
         // =================================================================================
         
-        // REQUERIMIENTO 1: Utiliza un Font tamaño 9, calibri o arial.
-        const defaultFont = { name: "Arial", sz: 9 }; 
+        // REQUERIMIENTO 1: Achica de 12 a 10 el tamaño del font utilizado.
+        const defaultFont = { name: "Arial", sz: 10 }; 
         
         const allBorders = {
             top: { style: "thin", color: { auto: 1 } },
@@ -227,13 +227,8 @@ app.post('/generate-report', async (req, res) => {
             right: { style: "thin", color: { auto: 1 } },
         };
         
-        // REQUERIMIENTO 4: Formato numérico con separador de miles y 2 decimales.
-        // NOTA: El formato "#,##0.00" es el estándar universal para Excel.
-        // Excel automáticamente usará un PUNTO (.) o una COMA (,) como separador de miles
-        // según la configuración regional del computador donde se abra el archivo.
+        // REQUERIMIENTO 2: Formato numérico con punto como separador de miles y 2 decimales.
         const numberFormatWithSeparators = "#,##0.00"; 
-
-        // REQUERIMIENTO 3: “% del Coeficiente AXI” en porcentaje con 4 dígitos decimales.
         const percentFormatWith4Decimals = '0.0000%'; 
 
         const headerStyle = {
@@ -259,7 +254,7 @@ app.post('/generate-report', async (req, res) => {
         const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormatWithSeparators };
         const percentFormatStyle = { ...defaultCellStyle, numFmt: percentFormatWith4Decimals };
         
-        const obsTitleStyle = { font: { ...defaultFont, sz: 10, bold: true } };
+        const obsTitleStyle = { font: { ...defaultFont, sz: 11, bold: true } };
         const obsBodyStyle = { font: defaultFont, alignment: { wrapText: true, vertical: "top" } };
         const disclaimerStyle = { font: { ...defaultFont, sz: 8, italic: true }, alignment: { wrapText: true, vertical: "center" } };
         // =================================================================================
@@ -281,36 +276,34 @@ app.post('/generate-report', async (req, res) => {
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
                 if (!worksheet['!rows']) worksheet['!rows'] = [];
-                if (R > 2) worksheet['!rows'][R] = { hpt: 12 };
+                if (R > 2) worksheet['!rows'][R] = { hpt: 12.5 }; // Ligeramente más alto para font 10
 
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cell_ref = xlsx.utils.encode_cell({ c: C, r: R });
                     const cell = worksheet[cell_ref];
                     if (!cell) continue;
 
-                    // 1. Aplicar estilo por defecto a todas las celdas
                     cell.s = defaultCellStyle;
 
-                    // 2. Sobrescribir con estilos específicos
-                    if (R === 0 && C === 1) { // Celda de disclaimer
+                    if (R === 0 && C === 1) {
                         cell.s = disclaimerStyle;
-                    } else if (R === 2) { // Fila de Títulos de Columna
+                    } else if (R === 2) {
                         cell.s = headerStyle;
                     } else if (cell.v?.toString().startsWith('Observaciones')) {
                          cell.s = obsTitleStyle;
                     } else if (cell.v?.toString().startsWith('Posibles causas') || cell.v?.toString().startsWith('- ') || cell.v?.toString().startsWith('Para cualquier')) {
                          cell.s = obsBodyStyle;
-                    } else if (cell.t === 'n') { // Si la celda es de tipo numérico
+                    } else if (cell.t === 'n') {
                          const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
                          if (descCellValue.startsWith("Total")) {
                              cell.s = totalStyle;
                          } else if (descCellValue.startsWith("Subtotal")) {
                              cell.s = subtotalStyle;
-                         } else if (R === 1 && C > 3) { // Fila de Coeficiente AXI
+                         } else if (R === 1 && C > 3) {
                              cell.s = percentFormatStyle;
-                         } else if (C === 0 || C === 2) { // Columnas Entidad y Cuenta
+                         } else if (C === 0 || C === 2) {
                             cell.s = integerFormatStyle;
-                         } else { // El resto de las celdas numéricas
+                         } else {
                             cell.s = decimalFormatStyle;
                          }
                     }
@@ -334,9 +327,8 @@ app.post('/generate-report', async (req, res) => {
             if (!worksheet['!merges']) worksheet['!merges'] = [];
             worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
             
-            // REQUERIMIENTO 2: Reduce a la mitad el alto de la primer y tercer filas.
-            worksheet['!rows'][0] = { hpt: 17.5 }; // Altura para la primera fila
-            worksheet['!rows'][2] = { hpt: 22.5 }; // Altura para la fila de títulos
+            worksheet['!rows'][0] = { hpt: 17.5 }; 
+            worksheet['!rows'][2] = { hpt: 22.5 }; 
             
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
