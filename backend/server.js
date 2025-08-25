@@ -1,4 +1,4 @@
-// backend/server.js (Versión Final con Formatos de Número y Fuente Específicos)
+// backend/server.js (Versión con Formatos Numéricos y Fuente Finales)
 
 import express from 'express';
 import cors from 'cors';
@@ -96,8 +96,8 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     const numericHeaders = [];
     allMonths.forEach(month => { const headersForMonth = [`${month} Saldo en moneda constante`, `${month} Saldo Histórico solo del mes`, `${month} Saldo Histórico acumulado al mes`, `${month} AXI mensual solo del mes`, `${month} AXI acumulado al mes`]; newHeaders.push(...headersForMonth); numericHeaders.push(...headersForMonth); });
     const firstRowContent = new Array(newHeaders.length).fill(null);
-    firstRowContent[0] = '<<== Volver a la TOC';
-    firstRowContent[1] = "Formatea esta hoja a tu gusto. Cifras expresadas en miles de pesos argentinos. Elaborado en base a información publicada por el B.C.R.A y al Indice-FACPCE-Res.-JG-539-18.   A los fines específicos de esta aplicación, el ajuste por inflación está calculado – únicamente – para las cuentas de resultados, es decir, no está calculado también para los rubros no monetarios de las cuentas patrimoniales (por ejemplo, Bienes de Uso, Intangibles y cuentas del Patrimonio Neto).";
+    firstRowContent[0] = '<< Volver a la Tabla de Contenidos';
+    firstRowContent[1] = "Cifras expresadas en miles de pesos argentinos. Elaborado en base a información publicada por el B.C.R.A y al Indice-FACPCE-Res.-JG-539-18.   A los fines específicos de esta aplicación, el ajuste por inflación está calculado – únicamente – para las cuentas de resultados, es decir, no está calculado también para los rubros no monetarios de las cuentas patrimoniales (por ejemplo, Bienes de Uso, Intangibles y cuentas del Patrimonio Neto).";
     const axiCoefficients = allMonths.map((month, i) => { if (i === 0) return 0; const currentMonthIndex = indicesMap.get(month); const previousMonthIndex = indicesMap.get(allMonths[i - 1]); return (currentMonthIndex && previousMonthIndex) ? (currentMonthIndex / previousMonthIndex) - 1 : 0; });
     const axiRow = new Array(newHeaders.length).fill(null);
     axiRow[3] = '% del Coeficiente AXI';
@@ -108,7 +108,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     const otrasCuentasKeys = cuentasKeys.filter(c => c < 500000 || c >= 700000).sort((a, b) => a - b);
     const processAccountRow = (num_cuenta) => {
         const cuentaData = pivotedData[num_cuenta];
-        const isAdjustable = (num_cuenta >= 500000 && num_cuenta < 700000);
+        const isAdjustable = (num_cuenta >= 500000 && c < 700000);
         const rowObject = { 'Entidad': infoEntidad.num_entidad, 'Nombre Entidad': infoEntidad.nombre_entidad, 'Cuenta': num_cuenta, 'Descripción Cuenta': cuentaData.desc };
         let saldoHistAcumuladoAnterior = 0, axiAcumuladoAnterior = 0, saldoMonedaConstanteAnterior = 0;
         allMonths.forEach((month, i) => {
@@ -164,7 +164,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     dataForSheet.push(['- Para las cuentas de ingresos cuyas descripciones comiencen con "Resultado por", en los casos en que el saldo mensual de tales cuentas de ingresos quede invertido, dicho saldo, por expresa norma del BCRA, debe ser reclasificado  a su correspondiente cuenta de egresos (por ejemplo, Resultado de Títulos ...). En este caso, se produce una diferencia en el AXI calculado por esta aplicación con respecto al AXI realmente contabilizado por el banco (pero que se termina compensando con la diferencia, a su vez, generada en la cuenta de destino de dicha reclasificación).']);
     dataForSheet.push(['- Para que el AXI calculado por esta aplicación coincida con el AXI real, contabilizado por el Banco,  debe definirse en esta aplicación, como rango de fechas, necesariamente desde Enero a Diciembre de un determinado año de ejercicio contable. Si no fuera así, el AXI calculado por esta applicación sería incompleto (debido a que no abarca el ejercicio completo).']);   
     dataForSheet.push(['- El total de diferencias que surjan al cierre de cada ejercicio contable (Diciembre),  entre  a) el  total del AXI calculado por esta aplicación para las cuentas de resultados, con respecto a  b) el  total del AXI real contabilizado por el Banco,  coincidirá, a su vez, con  c) el total del saldo histórico acumulado calculado por esta aplicación, con respecto a  d) el total histórico real contabilizado por el banco (debido a la lógica matemática implementada en el código).']);  
-    dataForSheet.push(['Para cualquier comentario, sugerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ... and happy coding and calculating ...']);   
+    dataForSheet.push(['Para cualquier comentario, surgerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ... and happy coding and calculating ...']);   
     return dataForSheet;
 }
 
@@ -217,7 +217,7 @@ app.post('/generate-report', async (req, res) => {
         // INICIO: DEFINICIÓN DE ESTILOS DE EXCEL (Ajustes Finales)
         // =================================================================================
         
-        // REQUERIMIENTO 4: Reduce el tamaño del font en cada página.
+        // REQUERIMIENTO: Reducir el tamaño del font.
         const defaultFont = { name: "Arial", sz: 9 }; 
         
         const allBorders = {
@@ -227,11 +227,11 @@ app.post('/generate-report', async (req, res) => {
             right: { style: "thin", color: { auto: 1 } },
         };
         
-        // REQUERIMIENTO 2: -245457 sea mostrado como -245.457,00
-        const numberFormatWithSeparators = '#.##0,00';
+        // REQUERIMIENTO: Formato numérico -245.457,00 y -3.407,26
+        const numberFormatFinal = "#.##0,00"; 
         
-        // REQUERIMIENTO 1: 0,0469... sea mostrado como 4,694% 
-        const percentFormatWith3Decimals = '0,000%'; 
+        // REQUERIMIENTO: Formato de AXI como 4,694%
+        const percentFormatFinal = "#.##0,000%";
 
         const headerStyle = {
             font: { ...defaultFont, bold: true, color: { rgb: "FFFFFF" } },
@@ -241,20 +241,20 @@ app.post('/generate-report', async (req, res) => {
         };
         const totalStyle = {
             font: { ...defaultFont, bold: true },
-            numFmt: numberFormatWithSeparators,
+            numFmt: numberFormatFinal,
             fill: { fgColor: { rgb: "FFFF00" } },
             border: allBorders
         };
         const subtotalStyle = {
             font: { ...defaultFont, bold: true, italic: true },
-            numFmt: numberFormatWithSeparators,
+            numFmt: numberFormatFinal,
             fill: { fgColor: { rgb: "D3D3D3" } },
             border: allBorders
         };
         const defaultCellStyle = { font: defaultFont, border: allBorders };
         const integerFormatStyle = { ...defaultCellStyle, numFmt: "0" };
-        const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormatWithSeparators };
-        const percentFormatStyle = { ...defaultCellStyle, numFmt: percentFormatWith3Decimals };
+        const decimalFormatStyle = { ...defaultCellStyle, numFmt: numberFormatFinal };
+        const percentFormatStyle = { ...defaultCellStyle, numFmt: percentFormatFinal };
         
         const obsTitleStyle = { font: { ...defaultFont, sz: 10, bold: true } };
         const obsBodyStyle = { font: defaultFont, alignment: { wrapText: true, vertical: "top" } };
@@ -278,7 +278,7 @@ app.post('/generate-report', async (req, res) => {
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
                 if (!worksheet['!rows']) worksheet['!rows'] = [];
-                if (R > 2) worksheet['!rows'][R] = { hpt: 12 }; 
+                if (R > 2) worksheet['!rows'][R] = { hpt: 12 };
 
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cell_ref = xlsx.utils.encode_cell({ c: C, r: R });
@@ -312,7 +312,7 @@ app.post('/generate-report', async (req, res) => {
                 }
             }
 
-            if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a la hoja ${TOC_SHEET_NAME}` };
+            if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a ${TOC_SHEET_NAME}` };
             
             const obsStartRow = dataForSheet.findIndex(row => typeof row[0] === 'string' && row[0].startsWith('Observaciones:'));
             if (obsStartRow !== -1) {
@@ -329,8 +329,8 @@ app.post('/generate-report', async (req, res) => {
             if (!worksheet['!merges']) worksheet['!merges'] = [];
             worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
             
-            worksheet['!rows'][0] = { hpt: 17 }; 
-            worksheet['!rows'][2] = { hpt: 22 }; 
+            worksheet['!rows'][0] = { hpt: 15 }; 
+            worksheet['!rows'][2] = { hpt: 20 }; 
             
             xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
         }
