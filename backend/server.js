@@ -158,7 +158,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     dataForSheet.push(emptyRow, emptyRow);
     
     dataForSheet.push(['Observaciones y comentarios al 26-08-2025 :']);
-    dataForSheet.push(['Posibles causas que generen diferencias entre el Ajuste por Inflación (AXI) calculado en forma automática por esta app, con respecto al AXI real contabilizado por el banco. Estas causas inciden en la anticuación de partidas realizada por esta app para el cálculo del AXI:']);
+    dataForSheet.push(['Posibles causas que generan diferencias entre el Ajuste por Inflación (AXI) calculado en forma automática por esta app, con respecto al AXI real contabilizado por el banco. Estas causas inciden en la anticuación de partidas realizada por esta app para el cálculo del AXI:']);
     dataForSheet.push(['- Ajustes contables con fecha valor (que sería la principal causa), realizados a posteriori del cierre de la presentación al BCRA del respectivo balance mensual TXT y, por ende, que no hayan impactado realmente en el balance presentado ante el BCRA (pero en este caso el banco debiera haber realizado una nueva presentación ante el BCRA, rectificando el anterior balance).']);
     dataForSheet.push(['- En los casos en que el INDEC hubiere, a posteriori, rectificado o corregido o publicado un nuevo IPIM (y el banco hubiere utilizado el IPIM "provisorio" anteriormente publicado), ello podría generar diferencia en el AXI (debido a que esta app toma como dato para el cálculo del AXI, el balance TXT en moneda constante publicado por el BCRA).']);
     dataForSheet.push(['- Para las cuentas de ingresos cuyas descripciones comiencen con "Resultado por", en los casos en que el saldo mensual de tales cuentas de ingresos quede invertido (debido a la volatilidad de las cotizaciones), dicho saldo, por expresa norma del BCRA, debe ser reclasificado  a su correspondiente cuenta de egresos (por ejemplo, Resultado de Títulos ...) . En este caso, se produce una diferencia en el AXI calculado por esta aplicación, con respecto al AXI realmente contabilizado por el banco (pero debiera compensarse con la diferencia, a su vez, generada en la cuenta de destino de dicha reclasificación). Este tipo de reclasificaciones pueden producirse varias veces para la misma cuenta y dentro de un mismo ejercicio.']);
@@ -363,6 +363,7 @@ app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 
 });
+
 
 
 
