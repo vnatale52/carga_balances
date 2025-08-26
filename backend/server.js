@@ -165,8 +165,8 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     dataForSheet.push(['- En cualquier reclasificación contable de cuentas de resultados, desde una cuenta de resultados a otra de resultados, dicha reclasificación debiera realizarse, reclasificándose separadamente, por un lado, el saldo histórico y,  por otro lado,  el saldo del AXI. Si así no se hiciere, ello afectaría la anticuación de partidas realizada por esta app, que parte, simplemente, del saldo según Balance TXT publicado por el BCRA.']);
     dataForSheet.push(['- Para que el AXI calculado por esta aplicación coincida con el AXI real, contabilizado por el Banco,  debe definirse en esta aplicación, como rango de fechas, necesariamente, desde Enero a Diciembre. Si no fuera así, el AXI calculado por esta aplicación sería incompleto (debido a que no abarca el ejercicio completo).']);   
     dataForSheet.push(['- El total de diferencias que surjan al cierre de cada ejercicio contable (Diciembre),  entre  a) el  total del AXI calculado por esta aplicación para las cuentas de resultados, con respecto a  b) el  total del AXI real contabilizado por el Banco,  coincidirá, a su vez, con  c) el total del saldo histórico acumulado calculado por esta aplicación, con respecto a  d) el total histórico real contabilizado por el banco (ello es debido a la lógica matemática implementada en esta app, es decir, la diferencia que surge en AXI, se compensa en el Histórico y viceversa).']);  
-    dataForSheet.push(['- Causa real de diferencias: esta app calcula el AXI (mediante "ingeniería matemática inversa"), partiendo del saldo en moneda constante, expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']); 
-    dataForSheet.push(['- Para cualquier comentario, sugerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ... and happy coding and calculating ...']);
+    dataForSheet.push(['Causa real de diferencias: esta app calcula el AXI (mediante "ingeniería matemática inversa"), partiendo del saldo en moneda constante, expresado en el miles de $, mientras que el banco realmente calcula el AXI partiendo del saldo histórico en CIFRAS COMPLETAS, lo cual es una fuente de pequeñas diferencias. Diferencia máxima estimada anual por simple redondeo a miles de $ : 500 (rendondeo) por 12 meses, igual a 6000 (en cifras completas), para cada cuenta contable de resultados.']); 
+    dataForSheet.push(['Para cualquier comentario, sugerencia o indicación de un posible error, contacta a Vincenzo  en vnatale52@gmail.com.  Saludos ... and happy coding and calculating ...']);
     return dataForSheet;
 }
 
@@ -363,6 +363,7 @@ app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 
 });
+
 
 
 
