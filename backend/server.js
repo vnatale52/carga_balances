@@ -157,7 +157,7 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     const emptyRow = new Array(newHeaders.length).fill(null);
     dataForSheet.push(emptyRow, emptyRow);
     
-    dataForSheet.push(['Observaciones, comentarios y errores a corregir al 28-08-2025 :']);
+    dataForSheet.push(['Observaciones, comentarios y errores a corregir al 02-09-2025 :']);
     dataForSheet.push([ 'MUY IMPORTANTE: Se debe elegir sólo un año completo y sólo uno, desde enero a diciembre del mismo año. Si has eligido más de un año, para las cuentas que han tenido saldo sólo en el primer año seleccionado y que en el año subsiguiente ya han dejado de tener saldo, la aplicación arrastrará un saldo incorrecto para los años en que han dejado de tener movimiento. También arrastra, incorrectamente, al año subsiguiente, el ajuste por inflación acumulado en el año inmediato anterior (porque no tiene definida la "refundición de cuentas"). Falta corregir tales errores en la lógica del programa. Seleccionando sólo un año calendario, tales errores NO se producirán, en absoluto.']);
     dataForSheet.push(['Para las cuentas que comienzan con 62, que son las cuentas dónde se expone el resultado monetario generado por el ajuste por inflación, estas cuentas - debido a su particularidad - no tienen saldo histórico, pero la aplicación muestra - incorrectamente - un saldo histórico. Falta corregir dicho error en la lógica del programa.']);
     dataForSheet.push(['Posibles causas que generan diferencias entre el Ajuste por Inflación (AXI) calculado en forma automática por esta app, con respecto al AXI real contabilizado por el banco. Estas causas inciden en la anticuación de partidas realizada por esta app para el cálculo del AXI:']);
@@ -366,6 +366,7 @@ app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 
 });
+
 
 
 
