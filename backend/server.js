@@ -28,7 +28,10 @@ async function procesarCuentas(filePath) {
         if (linea.trim() === '') continue;
         const [numCuenta, descripcion] = linea.split('\t');
         if (!numCuenta || !descripcion) continue;
-        cuentas.push({ num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10), descripcion_cuenta: descripcion.replace(/"/g, '').trim() });
+        cuentas.push({
+            num_cuenta: parseInt(numCuenta.replace(/"/g, ''), 10),
+            descripcion_cuenta: descripcion.replace(/"/g, '').trim()
+        });
     }
     return new Map(cuentas.map(c => [c.num_cuenta, c]));
 }
@@ -41,7 +44,11 @@ async function procesarNomina(filePath) {
         if (linea.trim() === '') continue;
         const [numEntidad, nombreEntidad, nombreCorto] = linea.split('\t');
         if (!numEntidad || !nombreEntidad) continue;
-        nomina.push({ num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10), nombre_entidad: nombreEntidad.replace(/"/g, '').trim(), nombre_corto: (nombreCorto || '').replace(/"/g, '').trim() });
+        nomina.push({
+            num_entidad: parseInt(numEntidad.replace(/"/g, ''), 10),
+            nombre_entidad: nombreEntidad.replace(/"/g, '').trim(),
+            nombre_corto: (nombreCorto || '').replace(/"/g, '').trim()
+        });
     }
     return new Map(nomina.map(e => [e.num_entidad, e]));
 }
@@ -54,6 +61,7 @@ function procesarIndices(filePath) {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
         const indicesMap = new Map();
+
         for (const row of jsonData) {
             if (!row || row.length < 2) continue;
             const fechaValue = row[0];
@@ -91,34 +99,84 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
     if (!balancesDeEstaEntidad || balancesDeEstaEntidad.length === 0) return [];
     const infoEntidad = nominaMap.get(num_entidad) || { nombre_entidad: 'Desconocido', num_entidad };
     const pivotedData = {};
-    for (const balance of balancesDeEstaEntidad) { if (!pivotedData[balance.num_cuenta]) { const desc = (cuentasMap.get(balance.num_cuenta) || {}).descripcion_cuenta || 'No encontrada'; pivotedData[balance.num_cuenta] = { desc, saldos: {} }; } pivotedData[balance.num_cuenta].saldos[balance.fecha_bce] = balance.saldo; }
+
+    for (const balance of balancesDeEstaEntidad) {
+        if (!pivotedData[balance.num_cuenta]){
+            const desc = (cuentasMap.get(balance.num_cuenta) || {}).descripcion_cuenta || 'No encontrada';
+            pivotedData[balance.num_cuenta] = { desc, saldos: {} };
+        }
+        pivotedData[balance.num_cuenta].saldos[balance.fecha_bce] = balance.saldo;
+    }
+
     const newHeaders = ['Entidad', 'Nombre Entidad', 'Cuenta', 'Descripción Cuenta'];
     const numericHeaders = [];
-    allMonths.forEach(month => { const headersForMonth = [`${month} Saldo en moneda constante`, `${month} Saldo Histórico solo del mes`, `${month} Saldo Histórico acumulado al mes`, `${month} AXI mensual solo del mes`, `${month} AXI acumulado al mes`]; newHeaders.push(...headersForMonth); numericHeaders.push(...headersForMonth); });
+
+    allMonths.forEach(month => {
+        const headersForMonth = [
+            `${month} Saldo en moneda constante`,
+            `${month} Saldo Histórico solo del mes`,
+            `${month} Saldo Histórico acumulado al mes`,
+            `${month} AXI mensual solo del mes`,
+            `${month} AXI acumulado al mes`
+        ];
+        newHeaders.push(...headersForMonth);
+        numericHeaders.push(...headersForMonth);
+    });
+
     const firstRowContent = new Array(newHeaders.length).fill(null);
     firstRowContent[0] = '<<== Volver a la TOC';
     firstRowContent[1] = "Formatea esta hoja a tu gusto. Cifras expresadas en miles de pesos argentinos. Elaborado en base a información publicada por el B.C.R.A y al Indice-FACPCE-Res.-JG-539-18.   A los fines específicos de esta aplicación, el ajuste por inflación está calculado – únicamente – para las cuentas de resultados, es decir, no está calculado también para los rubros no monetarios de las cuentas patrimoniales (por ejemplo, Bienes de Uso, Intangibles y cuentas del Patrimonio Neto).";
-    const axiCoefficients = allMonths.map((month, i) => { if (i === 0) return 0; const currentMonthIndex = indicesMap.get(month); const previousMonthIndex = indicesMap.get(allMonths[i - 1]); return (currentMonthIndex && previousMonthIndex) ? (currentMonthIndex / previousMonthIndex) - 1 : 0; });
+
+    const axiCoefficients = allMonths.map((month, i) => {
+        if (i === 0) return 0;
+        const currentMonthIndex = indicesMap.get(month);
+        const previousMonthIndex = indicesMap.get(allMonths[i - 1]);
+        return (currentMonthIndex && previousMonthIndex) ? (currentMonthIndex / previousMonthIndex) - 1 : 0;
+    });
+
     const axiRow = new Array(newHeaders.length).fill(null);
     axiRow[3] = '% del Coeficiente AXI';
-    allMonths.forEach((_, i) => { axiRow[4 + (i * 5) + 3] = axiCoefficients[i]; });
+    allMonths.forEach((_, i) => {
+        axiRow[4 + (i * 5) + 3] = axiCoefficients[i];
+    });
+
     const dataForSheet = [firstRowContent, axiRow, newHeaders];
     const cuentasKeys = Object.keys(pivotedData).map(Number);
-    const cuentasDeResultadosKeys = cuentasKeys.filter(c => c >= 500000 && c < 700000).sort((a, b) => a - b);
-    const otrasCuentasKeys = cuentasKeys.filter(c => c < 500000 || c >= 700000).sort((a, b) => a - b);
+
+    const cuentasDeResultadosKeys = cuentasKeys
+                                        .filter(c => c >= 500000 && c < 700000)
+                                        .sort((a, b) => a - b);
+    const otrasCuentasKeys = cuentasKeys
+                                .filter(c => c < 500000 || c >= 700000)
+                                .sort((a, b) => a - b);
+    
     const processAccountRow = (num_cuenta) => {
         const cuentaData = pivotedData[num_cuenta];
         const isAdjustable = (num_cuenta >= 500000 && num_cuenta < 700000);
-        const rowObject = { 'Entidad': infoEntidad.num_entidad, 'Nombre Entidad': infoEntidad.nombre_entidad, 'Cuenta': num_cuenta, 'Descripción Cuenta': cuentaData.desc };
+        const rowObject = {
+            'Entidad': infoEntidad.num_entidad,
+            'Nombre Entidad': infoEntidad.nombre_entidad,
+            'Cuenta': num_cuenta,
+            'Descripción Cuenta': cuentaData.desc
+        };
         let saldoHistAcumuladoAnterior = 0, axiAcumuladoAnterior = 0, saldoMonedaConstanteAnterior = 0;
+        
         allMonths.forEach((month, i) => {
             const saldoEnMonedaConstanteMes = cuentaData.saldos[month] || 0;
             let axiMensualMes = isAdjustable ? saldoMonedaConstanteAnterior * axiCoefficients[i] : 0;
             const axiAcumuladoMes = axiAcumuladoAnterior + axiMensualMes;
             const saldoHistAcumuladoMes = saldoEnMonedaConstanteMes - axiAcumuladoMes;
             const saldoHistoricoMes = saldoHistAcumuladoMes - saldoHistAcumuladoAnterior;
-            rowObject[`${month} Saldo en moneda constante`] = saldoEnMonedaConstanteMes; rowObject[`${month} Saldo Histórico solo del mes`] = saldoHistoricoMes; rowObject[`${month} Saldo Histórico acumulado al mes`] = saldoHistAcumuladoMes; rowObject[`${month} AXI mensual solo del mes`] = axiMensualMes; rowObject[`${month} AXI acumulado al mes`] = axiAcumuladoMes;
-            saldoHistAcumuladoAnterior = saldoHistAcumuladoMes; axiAcumuladoAnterior = axiAcumuladoMes; saldoMonedaConstanteAnterior = saldoEnMonedaConstanteMes;
+
+            rowObject[`${month} Saldo en moneda constante`] = saldoEnMonedaConstanteMes;
+            rowObject[`${month} Saldo Histórico solo del mes`] = saldoHistoricoMes;
+            rowObject[`${month} Saldo Histórico acumulado al mes`] = saldoHistAcumuladoMes;
+            rowObject[`${month} AXI mensual solo del mes`] = axiMensualMes;
+            rowObject[`${month} AXI acumulado al mes`] = axiAcumuladoMes;
+
+            saldoHistAcumuladoAnterior = saldoHistAcumuladoMes;
+            axiAcumuladoAnterior = axiAcumuladoMes;
+            saldoMonedaConstanteAnterior = saldoEnMonedaConstanteMes;
         });
         return newHeaders.map(header => rowObject[header] ?? null);
     };
@@ -140,7 +198,11 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
             }
             const processedRow = processAccountRow(num_cuenta);
             dataForSheet.push(processedRow);
-            numericHeaders.forEach(h => { const value = processedRow[newHeaders.indexOf(h)] || 0; subtotalAccumulator[h] += value; grandTotalAccumulator[h] += value; });
+            numericHeaders.forEach(h => {
+                const value = processedRow[newHeaders.indexOf(h)] || 0;
+                subtotalAccumulator[h] += value;
+                grandTotalAccumulator[h] += value;
+            });
             if (i === cuentasDeResultadosKeys.length - 1) {
                 const lastSubtotalRow = new Array(newHeaders.length).fill(null);
                 lastSubtotalRow[3] = `Subtotal Cuentas ${currentGroup}...`;
@@ -153,7 +215,10 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
         numericHeaders.forEach(h => grandTotalRow[newHeaders.indexOf(h)] = grandTotalAccumulator[h]);
         dataForSheet.push(grandTotalRow);
     }
-    if (otrasCuentasKeys.length > 0) { if (cuentasDeResultadosKeys.length > 0) dataForSheet.push(new Array(newHeaders.length).fill(null)); otrasCuentasKeys.forEach(key => dataForSheet.push(processAccountRow(key))); }
+    if (otrasCuentasKeys.length > 0) {
+        if (cuentasDeResultadosKeys.length > 0) dataForSheet.push(new Array(newHeaders.length).fill(null));
+        otrasCuentasKeys.forEach(key => dataForSheet.push(processAccountRow(key)));
+    }
     const emptyRow = new Array(newHeaders.length).fill(null);
     dataForSheet.push(emptyRow, emptyRow);
     
@@ -174,17 +239,41 @@ function prepareDataForSheet(balancesDeEstaEntidad, cuentasMap, nominaMap, allMo
 }
 
 // --- ENDPOINTS ---
-app.get('/api/entidades', async (req, res) => { try { const nominaPath = path.join(__dirname, '../frontend/data/nomina.txt'); if (!fs.existsSync(nominaPath)) return res.status(404).json({ message: 'Archivo nomina.txt no encontrado.' }); const nominaMap = await procesarNomina(nominaPath); res.json(Array.from(nominaMap.values())); } catch (error) { res.status(500).json({ message: 'Error interno al leer entidades.' }); } });
+app.get('/api/entidades', async (req, res) => {
+    try {
+        const nominaPath = path.join(__dirname, '../frontend/data/nomina.txt');
+        if (!fs.existsSync(nominaPath)) {
+            return res.status(404).json({ message: 'Archivo nomina.txt no encontrado.' });
+        }
+        const nominaMap = await procesarNomina(nominaPath);
+        res.json(Array.from(nominaMap.values()));
+    } catch (error) {
+        res.status(500).json({ message: 'Error interno al leer entidades.' });
+    }
+});
 
 app.post('/generate-report', async (req, res) => {
     try {
         console.log("Report generation started...");
         const filtros = req.body;
-        const filePaths = { balhist: path.join(__dirname, '../frontend/data/balhist.txt'), cuentas: path.join(__dirname, '../frontend/data/cuentas.txt'), nomina: path.join(__dirname, '../frontend/data/nomina.txt'), indices: path.join(__dirname, '../frontend/data/indices.xlsx') };
-        for (const key in filePaths) { if (!fs.existsSync(filePaths[key])) return res.status(404).send(`Error: El archivo ${path.basename(filePaths[key])} no se encuentra.`); }
+        const filePaths = {
+            balhist: path.join(__dirname, '../frontend/data/balhist.txt'),
+            cuentas: path.join(__dirname, '../frontend/data/cuentas.txt'),
+            nomina: path.join(__dirname, '../frontend/data/nomina.txt'),
+            indices: path.join(__dirname, '../frontend/data/indices.xlsx')
+        };
+        for (const key in filePaths) {
+            if (!fs.existsSync(filePaths[key])) {
+                return res.status(404).send(`Error: El archivo ${path.basename(filePaths[key])} no se encuentra.`);
+            }
+        }
         
         console.log("Loading lookup data (cuentas, nomina, indices)...");
-        const [cuentasMap, nominaMap, indicesMap] = await Promise.all([ procesarCuentas(filePaths.cuentas), procesarNomina(filePaths.nomina), Promise.resolve(procesarIndices(filePaths.indices)) ]);
+        const [cuentasMap, nominaMap, indicesMap] = await Promise.all([
+             procesarCuentas(filePaths.cuentas),
+             procesarNomina(filePaths.nomina),
+             Promise.resolve(procesarIndices(filePaths.indices))
+        ]);
         
         console.log("Lookup data loaded.");
         const workbook = xlsx.utils.book_new();
@@ -202,19 +291,29 @@ app.post('/generate-report', async (req, res) => {
         for await (const linea of rl) {
             const [numEntidadStr, fechaBceStr, numCuentaStr, saldoStr] = linea.split('\t');
             if (!numEntidadStr || !fechaBceStr || !numCuentaStr || saldoStr === undefined) continue;
+
             const entidadActual = parseInt(numEntidadStr.replace(/"/g, ''), 10);
+
             if (!isAllEntities && !selectedEntitiesSet.has(entidadActual)) continue;
+
             const anio = fechaBceStr.replace(/"/g, '').substring(0, 4);
             const mes = fechaBceStr.replace(/"/g, '').substring(4, 6);
             const fechaComparable = `${anio}-${mes}`;
+
             if (fechaComparable >= filtros.balhistDesde && fechaComparable <= filtros.balhistHasta) {
                 if (!balancesPorEntidad.has(entidadActual)) balancesPorEntidad.set(entidadActual, []);
-                balancesPorEntidad.get(entidadActual).push({ fecha_bce: `${mes}-${anio}`, num_cuenta: parseInt(numCuentaStr.replace(/"/g, ''), 10), saldo: parseInt(saldoStr.trim(), 10) });
+                balancesPorEntidad.get(entidadActual).push({
+                    fecha_bce: `${mes}-${anio}`,
+                    num_cuenta: parseInt(numCuentaStr.replace(/"/g, ''), 10),
+                    saldo: parseInt(saldoStr.trim(), 10)
+                });
             }
         }
         
         console.log(`Finished processing balhist.txt. Found data for ${balancesPorEntidad.size} entities.`);
-        if (balancesPorEntidad.size === 0) return res.status(404).send('No se encontraron registros de balance con los filtros seleccionados.');
+        if (balancesPorEntidad.size === 0) {
+            return res.status(404).send('No se encontraron registros de balance con los filtros seleccionados.');
+        }
         
         const sortedEntityNumbers = Array.from(balancesPorEntidad.keys()).sort((a, b) => a - b);
 
@@ -263,7 +362,10 @@ app.post('/generate-report', async (req, res) => {
         
         const obsTitleStyle = { font: { ...defaultFont, sz: 10, bold: true } };
         const obsBodyStyle = { font: defaultFont, alignment: { wrapText: true, vertical: "top" } };
-        const disclaimerStyle = { font: { ...defaultFont, sz: 8, italic: true }, alignment: { wrapText: true, vertical: "center" } };
+        const disclaimerStyle = {
+            font: { ...defaultFont, sz: 8, italic: true },
+            alignment: { wrapText: true, vertical: "center" }
+        };
         // =================================================================================
         // FIN: DEFINICIÓN DE ESTILOS DE EXCEL
         // =================================================================================
@@ -271,19 +373,36 @@ app.post('/generate-report', async (req, res) => {
         for (const num_entidad of sortedEntityNumbers) {
             console.log(`Generating sheet for entity ${num_entidad}...`);
             const entityBalances = balancesPorEntidad.get(num_entidad);
-            const dataForSheet = prepareDataForSheet(entityBalances, cuentasMap, nominaMap, allMonths, indicesMap, num_entidad);
+            const dataForSheet = prepareDataForSheet(
+                entityBalances,
+                cuentasMap,
+                nominaMap,
+                allMonths,
+                indicesMap,
+                num_entidad
+            );
             if (dataForSheet.length <= 3) { continue; }
             
             const infoEntidad = nominaMap.get(num_entidad) || {};
-            let sheetName = `${String(num_entidad).padStart(5, '0')} - ${infoEntidad.nombre_corto || infoEntidad.nombre_entidad || ''}`.trim().substring(0, 31).replace(/[\\/*?[\]]/g, '');
+            const nombre = infoEntidad.nombre_corto || infoEntidad.nombre_entidad || '';
+            let sheetName = `${String(num_entidad).padStart(5, '0')} - ${nombre}`
+                                .trim()
+                                .substring(0, 31)
+                                .replace(/[\\/*?[\]]/g, '');
+
             tocSheetData.push([sheetName, num_entidad, infoEntidad.nombre_entidad || '']);
             
             const worksheet = xlsx.utils.aoa_to_sheet(dataForSheet);
             
             const range = xlsx.utils.decode_range(worksheet['!ref']);
             for (let R = range.s.r; R <= range.e.r; ++R) {
-                if (!worksheet['!rows']) worksheet['!rows'] = [];
-                if (R > 2) worksheet['!rows'][R] = { hpt: 12 }; 
+                if (!worksheet['!rows']){
+                    worksheet['!rows'] = [];
+                }
+
+                if (R > 2){
+                    worksheet['!rows'][R] = { hpt: 12 }; 
+                }
 
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cell_ref = xlsx.utils.encode_cell({ c: C, r: R });
@@ -298,10 +417,15 @@ app.post('/generate-report', async (req, res) => {
                         cell.s = headerStyle;
                     } else if (cell.v?.toString().startsWith('Observaciones')) {
                          cell.s = obsTitleStyle;
-                    } else if (cell.v?.toString().startsWith('Posibles causas') || cell.v?.toString().startsWith('- ') || cell.v?.toString().startsWith('Para cualquier')) {
+                    } else if (
+                        cell.v?.toString().startsWith('Posibles causas') ||
+                        cell.v?.toString().startsWith('- ') ||
+                        cell.v?.toString().startsWith('Para cualquier')
+                    ) {
                          cell.s = obsBodyStyle;
                     } else if (cell.t === 'n') {
                          const descCellValue = worksheet[xlsx.utils.encode_cell({c: 3, r: R})]?.v || "";
+                         
                          if (descCellValue.startsWith("Total")) {
                              cell.s = totalStyle;
                          } else if (descCellValue.startsWith("Subtotal")) {
@@ -317,22 +441,54 @@ app.post('/generate-report', async (req, res) => {
                 }
             }
 
-            if (worksheet['A1']) worksheet['A1'].l = { Target: `#'${TOC_SHEET_NAME}'!A1`, Tooltip: `Ir a la hoja ${TOC_SHEET_NAME}` };
+            if (worksheet['A1']) {
+                worksheet['A1'].l = { 
+                    Target: `#'${TOC_SHEET_NAME}'!A1`,
+                    Tooltip: `Ir a la hoja ${TOC_SHEET_NAME}`
+                };
+            }
             
-            const obsStartRow = dataForSheet.findIndex(row => typeof row[0] === 'string' && row[0].startsWith('Observaciones:'));
+            const obsStartRow = dataForSheet.findIndex(row => {
+                return (typeof row[0] === 'string') && row[0].startsWith('Observaciones:');
+            });
+
             if (obsStartRow !== -1) {
-                if (!worksheet['!merges']) worksheet['!merges'] = [];
+                if (!worksheet['!merges']){
+                    worksheet['!merges'] = [];
+                }
                 for (let R = obsStartRow; R < dataForSheet.length; R++) {
-                    worksheet['!merges'].push({ s: { r: R, c: 0 }, e: { r: R, c: 8 } });
+                    worksheet['!merges'].push({
+                        s: { r: R, c: 0 },
+                        e: { r: R, c: 8 }
+                    });
                 }
             }
             
-            const colWidths = [ { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 45 } ];
-            allMonths.forEach(() => { colWidths.push({ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }); });
+            const colWidths = [
+                { wch: 10 },
+                { wch: 30 },
+                { wch: 12 },
+                { wch: 45 }
+            ];
+
+            allMonths.forEach(() => { 
+                colWidths.push(
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 18 }
+                ); 
+            });
             worksheet['!cols'] = colWidths;
             
-            if (!worksheet['!merges']) worksheet['!merges'] = [];
-            worksheet['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
+            if (!worksheet['!merges']){
+                worksheet['!merges'] = [];
+            }
+            worksheet['!merges'].push({
+                s: { r: 0, c: 1 },
+                e: { r: 0, c: 8 }
+            });
             
             worksheet['!rows'][0] = { hpt: 17 }; 
             worksheet['!rows'][2] = { hpt: 22 }; 
@@ -343,7 +499,23 @@ app.post('/generate-report', async (req, res) => {
         console.log("All sheets generated. Finalizing workbook...");
         const tocWorksheet = xlsx.utils.aoa_to_sheet(tocSheetData);
         tocWorksheet['!cols'] = [{ wch: 35 }, { wch: 15 }, { wch: 50 }];
-        tocSheetData.slice(1).forEach((row, index) => { const sheetName = row[0]; const cellAddress = `A${index + 2}`; if (tocWorksheet[cellAddress]) { tocWorksheet[cellAddress].l = { Target: `#'${sheetName}'!A1`, Tooltip: `Ir a la hoja ${sheetName}` }; tocWorksheet[cellAddress].s = { font: { ...defaultFont, color: { rgb: "0000FF" }, underline: true } }; } });
+
+        tocSheetData.slice(1).forEach((row, index) => {
+            const sheetName = row[0];
+            const cellAddress = `A${index + 2}`;
+            if (tocWorksheet[cellAddress]) {
+                tocWorksheet[cellAddress].l = {
+                    Target: `#'${sheetName}'!A1`,
+                    Tooltip: `Ir a la hoja ${sheetName}`
+                };
+                tocWorksheet[cellAddress].s = {
+                    font: { 
+                        ...defaultFont, color: { rgb: "0000FF" },
+                        underline: true
+                    }
+                };
+            }
+        });
         xlsx.utils.book_append_sheet(workbook, tocWorksheet, TOC_SHEET_NAME);
         
         workbook.SheetNames.splice(workbook.SheetNames.indexOf(TOC_SHEET_NAME), 1);
