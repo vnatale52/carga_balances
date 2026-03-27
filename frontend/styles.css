@@ -1,0 +1,440 @@
+/* styles.css */
+
+/* --- Variables de Diseño --- */
+:root {
+    --primary-blue: #007bff;
+    --dark-blue: #0056b3;
+    --light-grey: #f4f4f9;
+    --medium-grey: #e9e9e9;
+    --dark-grey-text: #333;
+    --medium-grey-text: #666;
+    --light-grey-text: #999;
+    --red-important: #cc0000;
+    --light-blue-bg: #eef7ff; /* Fondo para tarjetas bonus */
+    --hover-blue-bg: #dcebff; /* Fondo para tarjetas bonus en hover */
+
+    /* Colores para el fondo de la página (gris oscuro) */
+    --page-bg-color-dark: #333d47; /* Un gris oscuro profundo */
+    --page-bg-color-light: #444f5c; /* Un gris ligeramente más claro para el degradado */
+
+    /* Colores para el CONTENEDOR principal (ahora oscuro) */
+    --container-bg-color: #2b343d; /* Un gris oscuro para el fondo del contenedor */
+    --container-border-color: #4a5a6b; /* Borde sutil para fieldset */
+
+    /* Colores de texto para elementos dentro del contenedor oscuro */
+    --container-text-color-bright: #f0f0f0; /* Texto muy claro/casi blanco para párrafos */
+    --container-text-color-medium: #c0c0c0; /* Texto medio para descripciones */
+    --container-text-color-dark-headings: #7ddbff; /* Azul claro para h1/h2 en contenedor oscuro */
+    --container-text-color-field-labels: #a0a0a0; /* Gris claro para labels de formularios */
+    --container-code-bg: #5a6a7b; /* Fondo para el código */
+    --container-code-text: #f0f0f0; /* Texto claro para el código */
+    --container-fieldset-bg: #37424d; /* Fondo del fieldset dentro del contenedor */
+    --container-fieldset-legend: #7ddbff; /* Color de leyenda del fieldset */
+    --container-filter-h3: #7ddbff; /* Color para h3 de filtros */
+
+    /* Colores para bonus items */
+    --bonus-item-bg: #37424d; /* Fondo oscuro para tarjetas bonus */
+    --bonus-item-text: #e0e0e0; /* Texto claro para tarjetas bonus */
+    --bonus-item-hover-bg: #444f5c; /* Fondo más claro en hover */
+    --bonus-item-hover-text: #ffffff; /* Texto más blanco en hover */
+}
+
+/* --- Estilos Generales del Cuerpo y Contenedor --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, var(--page-bg-color-dark) 0%, var(--page-bg-color-light) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px 0;
+    line-height: 1.6;
+    color: var(--container-text-color-bright);
+}
+
+.container {
+    background: var(--container-bg-color);
+    padding: 2rem 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    max-width: 750px;
+    width: 100%;
+    margin: 15px;
+}
+
+/* --- Estilos de Encabezados --- */
+header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    color: var(--container-text-color-dark-headings);
+    margin-bottom: 0.2rem;
+    font-size: 2.3rem;
+    font-weight: 700;
+}
+
+h2 {
+    color: var(--container-text-color-dark-headings);
+    font-size: 1.6rem;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+h3 {
+    color: var(--dark-blue);
+    font-size: 1.3rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--container-border-color);
+    padding-bottom: 0.5rem;
+}
+
+h4.developed-by {
+    color: var(--container-text-color-medium);
+    font-weight: normal;
+    font-size: 0.85rem;
+    margin-top: -0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* --- Sección de Información General --- */
+.info-section p {
+    color: var(--container-text-color-bright);
+    margin-bottom: 0.5rem; /* Reducido: antes 0.8rem, para acercar a los filtros */
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+code {
+    background-color: var(--container-code-bg);
+    color: var(--container-code-text);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.9em;
+}
+
+/* --- Estilos del Formulario y Filtros --- */
+fieldset {
+    border: 1px solid var(--container-border-color);
+    border-radius: 8px;
+    padding: 1.5rem 1.8rem; /* Reducido: antes 1.8rem, para comprimir el contenido del fieldset */
+    margin-top: 1rem; /* **CAMBIO CLAVE**: Reducido de 2rem para comprimir el espacio superior */
+    margin-bottom: 1.8rem; /* Reducido: antes 2rem */
+    background-color: var(--container-fieldset-bg);
+}
+
+legend {
+    padding: 0 0.8rem;
+    font-weight: bold;
+    color: var(--container-fieldset-legend);
+    font-size: 1.05rem;
+}
+
+.filter-section h3 {
+    color: var(--container-filter-h3);
+    margin-top: 0.6rem; /* Reducido: antes 0.8rem */
+    margin-bottom: 0.4rem; /* Reducido: antes 0.6rem */
+    font-size: 1.2rem;
+    padding-bottom: 0.4rem;
+}
+
+.form-group {
+    margin-bottom: 0.8rem; /* Reducido: antes 1rem */
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.3rem; /* Reducido: antes 0.4rem */
+    font-weight: 600;
+    color: var(--container-text-color-field-labels);
+    font-size: 0.9rem;
+}
+
+input[type="month"],
+select {
+    display: block;
+    width: 100%;
+    padding: 8px; /* Reducido: antes 10px */
+    border: 1px solid var(--container-border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #fff;
+    color: var(--dark-grey-text);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="month"]:focus,
+select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+select[multiple] {
+    padding: 6px; /* Reducido: antes 8px */
+    height: 110px; /* Reducido: antes 120px */
+}
+
+.help-text {
+    font-size: 0.7rem; /* Reducido: antes 0.75rem */
+    color: var(--container-text-color-field-labels);
+    margin-top: 4px; /* Reducido: antes 5px */
+    text-align: left;
+}
+
+/* --- Estilos de Enlaces de Documentos --- */
+.document-links {
+    margin-top: 1.5rem; /* Reducido: antes 1.8rem */
+    border-top: 1px dashed var(--container-border-color);
+    padding-top: 0.8rem; /* Reducido: antes 1rem */
+}
+
+.download-link {
+    color: var(--primary-blue);
+    text-decoration: none;
+    display: block;
+    margin-top: 6px; /* Reducido: antes 8px */
+    font-weight: 500;
+    font-size: 0.85rem; /* Reducido: antes 0.9rem */
+    padding: 4px 0; /* Reducido: antes 5px */
+    border-radius: 4px;
+    transition: color 0.3s, background-color 0.3s, transform 0.2s;
+}
+
+.download-link:hover {
+    color: #92d1ff;
+    text-decoration: underline;
+    transform: translateX(3px);
+}
+
+.important-link {
+    color: var(--red-important);
+    font-weight: bold;
+    font-size: 0.9rem; /* Reducido: antes 0.95rem */
+    padding: 5px 0; /* Reducido: antes 7px */
+}
+
+.important-link:hover {
+    color: #ff6666;
+    text-decoration: underline;
+    transform: translateX(3px);
+}
+
+.external-link::after {
+    content: ' ↗';
+    font-size: 0.8em;
+    vertical-align: super;
+    margin-left: 2px;
+}
+
+/* --- Estilos del Botón Generar Reporte --- */
+button {
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 10px 18px; /* Reducido: antes 12px 20px */
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem; /* Reducido: antes 1rem */
+    font-weight: bold;
+    width: 100%;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    margin-top: 1.5rem; /* Reducido: antes 1.8rem */
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+button:hover {
+    background-color: var(--dark-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(0, 123, 255, 0.3);
+}
+
+button:disabled {
+    background-color: #a0c3e6;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+}
+
+#status {
+    margin-top: 1rem; /* Reducido: antes 1.2rem */
+    font-size: 0.9rem; /* Reducido: antes 0.95rem */
+    font-weight: bold;
+    text-align: center;
+    color: var(--container-text-color-bright);
+}
+
+/* --- Estilos de la Sección de Aplicaciones Bonus --- */
+.bonus-section {
+    margin-top: 2.5rem; /* Reducido: antes 3rem */
+    padding-top: 1.5rem; /* Reducido: antes 2rem */
+    border-top: 1px solid var(--container-border-color);
+}
+
+.bonus-section h3 {
+    color: var(--container-filter-h3);
+    margin-top: 0.8rem; /* Reducido: antes 1rem */
+    margin-bottom: 0.6rem; /* Reducido: antes 0.8rem */
+    padding-bottom: 0.3rem; /* Reducido: antes 0.4rem */
+}
+
+.bonus-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Minwidth reducido */
+    gap: 10px; /* Reducido: antes 12px */
+    margin-top: 0.8rem; /* Reducido: antes 1rem */
+}
+
+.bonus-item {
+    background-color: var(--bonus-item-bg);
+    color: var(--bonus-item-text);
+    text-decoration: none;
+    padding: 10px 12px; /* Reducido: antes 12px 15px */
+    border-radius: 8px;
+    font-size: 0.8rem; /* Reducido: antes 0.85rem */
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Sombra ligeramente reducida */
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px; /* Reducido: antes 70px */
+    position: relative;
+    line-height: 1.2; /* Comprime aún más el interlineado */
+}
+
+.bonus-item:hover {
+    transform: translateY(-2px); /* Efecto de levantamiento ligeramente reducido */
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); /* Sombra ligeramente reducida */
+    background-color: var(--bonus-item-hover-bg);
+    color: var(--bonus-item-hover-text);
+    text-decoration: none;
+}
+
+.bonus4-box {
+    background: linear-gradient(45deg, #0056b3, #007bff);
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 102, 204, 0.4);
+}
+
+.bonus4-box:hover {
+    background: linear-gradient(45deg, #007bff, #33aaff);
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.6);
+    color: white;
+}
+
+.new-bonus {
+    border: 2px solid var(--primary-blue);
+    background-color: var(--bonus-item-bg);
+}
+
+.new-tag {
+    position: absolute;
+    top: -7px; /* Ajustado */
+    right: -7px; /* Ajustado */
+    background-color: var(--red-important);
+    color: white;
+    font-size: 0.65rem; /* Reducido */
+    font-weight: bold;
+    padding: 1px 6px; /* Reducido */
+    border-radius: 5px;
+    transform: rotate(5deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    white-space: nowrap;
+}
+
+/* --- Media Queries para Responsividad --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem; /* Reducido */
+        margin: 8px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    h3 {
+        font-size: 1rem; /* Reducido */
+    }
+
+    .bonus-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 8px; /* Reducido */
+    }
+
+    .bonus-item {
+        padding: 8px 6px; /* Reducido */
+        min-height: 50px;
+        font-size: 0.75rem; /* Reducido */
+    }
+
+    .new-tag {
+        font-size: 0.6rem;
+        top: -6px;
+        right: -6px;
+        padding: 1px 4px;
+    }
+
+    select[multiple] {
+        height: 90px !important; /* Reducido */
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem; /* Reducido */
+        margin: 5px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+    }
+
+    button {
+        padding: 8px 10px; /* Reducido */
+        font-size: 0.9rem;
+    }
+
+    .bonus-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bonus-item {
+        font-size: 0.75rem;
+        min-height: 45px;
+        padding: 8px;
+    }
+
+    .form-group label {
+        font-size: 0.8rem;
+    }
+
+    input[type="month"],
+    select {
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    select[multiple] {
+        height: 80px !important; /* Reducido */
+    }
+}

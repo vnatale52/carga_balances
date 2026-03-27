@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal del Auditor Fiscal - Generador de Reportes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Portal del Auditor Fiscal</h1>
+            <h2>Generador de Reportes de Balances</h2>
+            <h4 class="developed-by">Página en desarrollo - Por vnatale52@gmail.com</h4>
+        </header>
+
+        <section class="info-section">
+            <p>
+                Los archivos de datos — <code>balhist.txt</code>, <code>cuentas.txt</code>, <code>nomina.txt</code> e <code>indices.xlsx</code> —
+                son cargados automáticamente por esta aplicación desde una carpeta <code>frontend/data</code> en el servidor.
+                Las cifras se expresan en miles de pesos.
+            </p>
+            <p>Define los filtros para generar el reporte.</p>
+        </section>
+
+        <form id="reportForm">
+            <fieldset>
+                <legend>Filtros de Datos</legend>
+                <div class="filter-section">
+                    <h3>Elige una entidad financiera (o más de una, con precaución por el rendimiento):</h3>
+                    <div class="form-group">
+                        <label for="entidadSelect">Número de Entidad:</label>
+                        <select id="entidadSelect" name="entidad" required multiple style="height: 120px;">
+                            <option value="" disabled selected>Cargando entidades...</option>
+                        </select>
+                        <p class="help-text">
+                            Mantén presionado <strong>Ctrl</strong> (o <strong>Cmd</strong> en Mac) para seleccionar varias entidades.
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="balhistDesdeInput">Fecha Desde - (Año calendario completo, de Enero a Diciembre. Puedes seleccionar 2 o 3 años):</label>
+                        <input type="month" id="balhistDesdeInput" name="balhistDesde" value="2024-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="balhistHastaInput">Fecha Hasta:</label>
+                        <input type="month" id="balhistHastaInput" name="balhistHasta" value="2025-12" required>
+                    </div>
+
+                    <div class="document-links">
+                        <a href="muy_importante_ajuste_por_inflacion.pdf" download="muy_importante_ajuste_por_inflacion.pdf" class="download-link important-link">
+                            ⬇️ Imprescindible su lectura. Últimas mejoras implementadas y artículo sobre precisión del AXI.
+                        </a>
+                        <a href="Lógica matemática aplicada en la App Carga-Balances.xlsx" download="Lógica matemática aplicada en la App Carga-Balances.xlsx" class="download-link">
+                            ⬇️ Lógica matemática aplicada en esta App Carga-Balances
+                        </a>
+                        <a href="https://www.bcra.gob.ar/Pdfs/Texord/plandecuentas.pdf" download="https://www.bcra.gob.ar/Pdfs/Texord/plandecuentas.pdf" class="download-link external-link">
+                            ⬇️ Descarga el Plan de Cuentas del BCRA
+                        </a>
+                        <a href="https://www.bcra.gob.ar/Pdfs/Texord/RI-NIIF.pdf" download="https://www.bcra.gob.ar/Pdfs/Texord/RI-NIIF.pdf" class="download-link external-link">
+                            ⬇️ Descarga el Régimen Informativo - Estados Financieros (BCRA)
+                        </a>
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit" id="generateReportBtn">Generar Reporte Excel</button>
+
+            <section class="bonus-section">
+                <h3>Aplicaciones Bonus</h3>
+                <div class="bonus-grid">
+                    <a href="https://js-find-strings-in-files.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 1 : Buscador simultáneo de múltiples cadenas de texto, en varios archivos a la vez y de diversos formatos, extrayendo el contexto que rodea al texto hallado - En Javascript - Versión superada por el Bonus 8
+                    </a>
+                    <a href="https://find-strings-in-files.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 2 : Buscador simultáneo de múltiples cadenas de texto, en varios archivos a la vez y de diversos formatos, extrayendo el contexto que rodea al texto hallado - En Python - Versión superada por el Bonus 8
+                    </a>
+                    <a href="https://calculo-intereses.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 3 : Cálculo de los Intereses Compensatorios o Resarcitorios
+                    </a>
+                    <a href="https://vnatale52.github.io/Reporte-de-Gastos-de-Viaticos/" target="_blank" class="bonus-item">
+                        Bonus 4 : Reporte de Gastos de Viáticos
+                    </a>
+                    <a href="https://vnatale52.github.io/combinaciones_de_sumandos/" target="_blank" class="bonus-item bonus4-box">
+                        Bonus 5 : Búsqueda de combinaciones posibles de varios sumandos que integran o componen un importe total. App para Web, en código Python y C Sharp. Es útil para hallar los importes que componen otro importe o una diferencia. Se recomienda bajar el código en Python o C Sharp (mucho más veloz) y ejecutarlo en modo local en tu propia PC.
+                    </a>
+                    <a href="https://curso-react-vincenzo.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 6 : (Trabajo Práctico sobre React.js) Catálogo de Productos E-Commerce. Desarrollado para PC de escritorio; falta mejorar su visualización en teléfonos
+                    </a>
+                    <a href="https://vnatale52-project-inventario.onrender.com/" target="_blank" class="bonus-item">
+                       Bonus 7 :  Full-stack Web Application for managing administrative inventory records with advanced "Command Chain" user management (Administración del Inventario de Expedientes de Fiscalización). Avanzado estado de desarrollo y testing. A aquéllos interesados, Vincenzo les proporcionará una clave provisoria y aquéllos que quieran participar en este proyecto, serán muy bienvenidos. Se necesitan voluntarios que diariamente estén relacionados con esta tarea, para poder continuar y utilizar un volúmen de datos reales. <span class="new-tag">¡SE NECESITAN VOLUNTARIOS!</span>
+                    </a>
+                    <a href="https://docsearch-6y2m.onrender.com/" target="_blank" class="bonus-item new-bonus">
+                        Bonus 8 - ULTRA MEJORADO : Buscador simultáneo de múltiples cadenas de texto, en varios archivos a la vez y de diversos formatos (pdf, docx, txt, xlsx), extrayendo el contexto que rodea al texto hallado, por ejemplo, búsqueda en Resoluciones en pdf de la Comisión Arbitral y Comisión Plenaria (y no sólo)- POTENCIADO con REGEX y OCR para búsqueda en imágenes o gráficos. <span class="new-tag">¡NUEVO!</span>
+                    </a>
+                </div>
+            </section>
+        </form>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="scripts.js" type="module"></script>
+</body>
+</html>
