@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal del Auditor Fiscal - Generador de Reportes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Portal del Auditor Fiscal</h1>
+            <a href="https://www.youtube.com/watch?v=TqlJ37bml3M" class="download-link" target="_blank" style="margin-bottom: 10px;">
+              Video recomendado (cualquier coincidencia con la realidad actual NO, NO es mera coincidencia !!!):<br>
+              ¡Estamos Rodeados de Idiotas! ... y Nadie Dice Nada ... El Diario de un Estoico!
+            </a>
+            <h2>Generador de Reportes de Balances (desde 01-2022 a 12-2025)</h2>
+            <h4 class="developed-by">Página en desarrollo - Por vnatale52@gmail.com</h4>
+            
+            <a href="2026-04-10_talento-tech-desarrollo-de-aplicaciones-web-node-js-es.pdf" download="Insignia Hito Recibida" class="download-link">
+                          ⬇️ Insignia Hito Recibida
+            </a>
+        </header>
+
+        <section class="info-section">
+            <p>
+                Los archivos de datos — <code>balhist.txt</code>, <code>cuentas.txt</code>, <code>nomina.txt</code> e <code>indices.xlsx</code> —
+                (previamente descargados desde el server del BCRA) son automáticamente cargados, por esta aplicación, desde una carpeta <code>frontend/data</code> localizada en el servidor.
+                Las cifras se expresan en miles de pesos.
+            </p>
+            <p>Define los filtros para generar el reporte.</p>
+        </section>
+
+        <form id="reportForm">
+            <fieldset>
+                <legend>Filtros de Datos</legend>
+                <div class="filter-section">
+                    <h3>Elige una entidad financiera (o más de una, con precaución, debido a los recursos disponibles muy limitados)</h3>
+                    <div class="form-group">
+                        <label for="entidadSelect">Número de Entidad:</label>
+                        <select id="entidadSelect" name="entidad" required multiple style="height: 120px;">
+                            <option value="" disabled selected>Cargando entidades...</option>
+                        </select>
+                        <p class="help-text">
+                            Mantén presionado <strong>Ctrl</strong> (o <strong>Cmd</strong> en Mac) para seleccionar varias entidades.
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="balhistDesdeInput">Fecha Desde - (Año calendario completo, de Enero a Diciembre. Puedes seleccionar hasta 4 años, con precaución):</label>
+                        <input type="month" id="balhistDesdeInput" name="balhistDesde" value="2024-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="balhistHastaInput">Fecha Hasta:</label>
+                        <input type="month" id="balhistHastaInput" name="balhistHasta" value="2025-12" required>
+                    </div>
+
+                    <div class="document-links">
+                        <a href="muy_importante_ajuste_por_inflacion.pdf" download="muy_importante_ajuste_por_inflacion.pdf" class="download-link important-link">
+                            ⬇️ Imprescindible su lectura. Últimas mejoras implementadas y artículo sobre precisión del AXI.
+                        </a>
+                        <a href="Lógica matemática aplicada en la App Carga-Balances.xlsx" download="Lógica matemática aplicada en la App Carga-Balances.xlsx" class="download-link">
+                            ⬇️ Lógica matemática aplicada en esta App Carga-Balances
+                        </a>
+                        <a href="https://www.bcra.gob.ar/Pdfs/Texord/plandecuentas.pdf" download="https://www.bcra.gob.ar/Pdfs/Texord/plandecuentas.pdf" class="download-link external-link">
+                            ⬇️ Descarga el Plan de Cuentas del BCRA
+                        </a>
+                        <a href="https://www.bcra.gob.ar/Pdfs/Texord/RI-NIIF.pdf" download="https://www.bcra.gob.ar/Pdfs/Texord/RI-NIIF.pdf" class="download-link external-link">
+                            ⬇️ Descarga el Régimen Informativo - Estados Financieros (BCRA)
+                        </a>
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit" id="generateReportBtn">Generar Reporte en formato Excel</button>
+
+            <section class="bonus-section">
+                <h3>Aplicaciones Bonus</h3>
+                <div class="bonus-grid">
+                    <a href="https://docsync-b62g.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 1 : DocSync es una Web App para la gestión colaborativa de informes que permite a equipos de trabajo: * Convertir documentos Word (.docx) a a archivos Markdown y viceversa * Controlar versiones con Git/GitHub con historial completo, comparación de cambios * Trabajar en equipo con bloqueo exclusivo del documento para evitar ediciones simultáneas * Gestionar usuarios con 5 roles diferenciados y una matriz de permisos configurable * Recibir notificaciones por email en cada operación importante. <span class="new-tag">¡EN DESARROLLO!</span>
+                    </a>
+
+
+                    <a href="https://app-fifo-fci.onrender.com/" target="_blank" class="bonus-item">
+<<<<<<< HEAD
+			Bonus 2 :  App-FIFO-FCI  realiza el procesamiento cronológico, costeo y auditoría mediante el método **FIFO (First In, First Out)**, para determinar el Resultado Neto (valor de Rescate menos valor de Subcripciones) por cada operación individual de Fondos Comunes de Inversión (FCI), mediante la aplicación del método de costeo FIFO (PRIMERO ENTRADO, PRIMERO SALIDO). Utilizable también para otro tipo de títulos o valores e, incluso para bienes de cambio, cuyo resultado neto sea igual a Venta menos Costo computable, mediante FIFO. Ver Readme.md.   <span class="new-tag">¡NUEVO!</span>
+=======
+			Bonus 2 :  App-FIFO-FCI  realiza el procesamiento cronológico, costeo y auditoría mediante el método **FIFO (First In, First Out)**, para determinar el Resultado Neto (valor de Rescate menos valor de Subscripciones) por cada operación individual de Fondos Comunes de Inversión (FCI), mediante la aplicación del método de costeo FIFO (PRIMERO ENTRADO, PRIMERO SALIDO). Utilizable también para otro tipo de títulos o valores e, incluso para bienes de cambio, cuyo resultado neto sea igual a Venta menos Costo computable, mediante FIFO. Ver Readme.md.   <span class="new-tag">¡NUEVO - FIFO LIFO PPP !</span>
+>>>>>>> 404b0bf0835b07425738481a2f9d6f4b27aaea1c
+                    </a>
+
+
+                    <a href="https://calculo-intereses.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 3 : Cálculo de los Intereses Compensatorios o Resarcitorios
+                    </a>
+                    <a href="https://vnatale52.github.io/Reporte-de-Gastos-de-Viaticos/" target="_blank" class="bonus-item">
+                        Bonus 4 : Reporte de Gastos de Viáticos
+                    </a>
+                    <a href="https://vnatale52.github.io/combinaciones_de_sumandos/" target="_blank" class="bonus-item bonus4-box">
+                        Bonus 5 : Búsqueda de combinaciones posibles de varios sumandos que integran o componen un importe total. App para Web, en código Python y C Sharp. Es útil para hallar los importes que componen otro importe o una diferencia. Se recomienda bajar el código en Python o C Sharp (mucho más veloz) y ejecutarlo en modo local en tu propia PC.
+                    </a>
+                    <a href="https://curso-react-vincenzo.onrender.com/" target="_blank" class="bonus-item">
+                        Bonus 6 : (Trabajo Práctico sobre React.js) Catálogo de Productos E-Commerce. Para PC de escritorio; falta mejorar su visualización en dispositivos móviles. Se conecta al server externo  https://fakestoreapi.com/productos, que, a veces, puede no estar disponible.
+                    </a>
+                    <a href="https://vnatale52-project-inventario.onrender.com/" target="_blank" class="bonus-item">
+                       Bonus 7 :  Full-stack Web Application for managing administrative inventory records with advanced "Command Chain" user management (Administración del Inventario de Expedientes de Fiscalización). En avanzado estado de desarrollo y testing. A aquellos interesados, Vincenzo les proporcionará una clave provisoria, para poder continuar y utilizar un volúmen de datos reales, a los efectos de realizar una "prueba de usabilidad", consistente en  observar a usuarios reales mientras interactúan con la aplicación y realizan tareas específicas, siendo el objetivo final, mejorar la experiencia del usuario (UX).  <span class="new-tag">¡SE NECESITAN VOLUNTARIOS!</span>                
+                       
+                    </a>
+                    <a href="https://docsearch-6y2m.onrender.com/" target="_blank" class="bonus-item new-bonus">
+                        Bonus 8 - ULTRA MEJORADO : Buscador simultáneo de múltiples cadenas de texto, en varios archivos a la vez y de diversos formatos (pdf, docx, txt, xlsx), extrayendo el contexto que rodea al texto hallado, por ejemplo, búsqueda en Resoluciones en pdf de la Comisión Arbitral y Comisión Plenaria (y no sólo)- POTENCIADO con REGEX y OCR para búsqueda en imágenes o gráficos. <span class="new-tag">¡NUEVO!</span>
+                    </a>
+                </div>
+            </section>
+        </form>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="scripts.js" type="module"></script>
+</body>
+</html>
